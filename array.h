@@ -19,7 +19,7 @@
 #define array_set_comparator(arr, c) arr->comparator = c
 #define array_is_empty(arr) arr->len == 0
 #define array_at(arr, i) arr->at(arr, i)
-#define array_at_val(arr, i) *arr->at(arr, i)
+#define array_at_val(arr, i) *arr->at(arr, i) // !!! be careful
 #define array_pop(arr, pos) arr->pop(arr, pos)
 #define array_push(arr, item) arr->push(arr, item)
 #define array_push_val(arr, val) ({ \
