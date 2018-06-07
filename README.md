@@ -1,5 +1,5 @@
 # c_array
-simple array implementation in C
+Simple array implementation in C.
 
 Code example:
 ```
@@ -13,7 +13,7 @@ typedef struct data {
 	float b;
 } data_t;
 
-array_generator(data_t, data_array);
+array_generator(data_t, data_array); // or array_generator(struct data, data_array)
 array_generator(int, int_array);
 
 int data_comparator(data_t *item1, data_t *item2)
@@ -23,8 +23,8 @@ int data_comparator(data_t *item1, data_t *item2)
 
 int main(void)
 {
-	int_array *iarr = NULL;
-	struct data_array *darr = NULL;
+	int_array_t *iarr = NULL; // or struct int_array *iarr = NULL;
+	struct data_array *darr = NULL; // or data_array_t *darr = NULL;
 	int values[] = { 1, 2, 5, 8, -1, 44, 3, 0, 66 };
 	int i = 54;
 
@@ -80,4 +80,9 @@ int main(void)
 
 	return 0;
 }
+```
+
+To compile:
+```
+gcc -o array array.c
 ```
