@@ -13,8 +13,7 @@
 #define __array_find(name)  __arr_## name ##_find
 #define __array_new(name)   __arr_## name ##_new
 
-#define array(name) struct name
-#define array_new(T) __array_new(T)()
+#define array_new(name) __array_new(name)()
 #define array_len(arr) arr->len
 #define array_set_comparator(arr, c) arr->comparator = c
 #define array_is_empty(arr) arr->len == 0
@@ -39,10 +38,10 @@
 	})
 
 #define array_free(arr) \
-	do { \
+	if (arr) { \
 		free(arr->data); \
 		free(arr); \
-	} while(0);
+	}
 
 #define array_for_each(iter, arr) \
 	__typeof(arr->data) iter; \
@@ -55,8 +54,10 @@
 	for ( ; __aind(iter) < array_len(arr) && (iter = array_at_val(arr, __aind(iter)), 1); ++__aind(iter))
 
 #define __array_new_gen(T, name) \
-	int __array_push(name)(name *arr, T *item) \
+	int __array_push(name)(struct name *arr, T *item) \
 	{ \
+		if (!arr) \
+			return EACCES; \
 		if (arr->capacity == arr->len) { \
 			arr->capacity *= 2; \
 			arr->data = (T *) realloc(arr->data, arr->capacity * sizeof(T)); \
@@ -69,8 +70,10 @@
 		return 0; \
 	} \
 	\
-	int __array_pop(name)(name *arr, int pos) \
+	int __array_pop(name)(struct name *arr, int pos) \
 	{ \
+		if (!arr) \
+			return EACCES; \
 		if (array_is_empty(arr)) \
 			return ENODATA; \
 		if ((pos >= array_len(arr)) || (pos < -array_len(arr))) \
@@ -93,16 +96,20 @@
 		return 0; \
 	} \
 	\
-	T *__array_at(name)(name *arr, int pos) \
+	T *__array_at(name)(struct name *arr, int pos) \
 	{ \
+		if (!arr) \
+			return NULL; \
 		if (pos >= 0) \
 			return pos < array_len(arr) ? &arr->data[pos] : NULL; \
 		else \
 			return pos >= -array_len(arr) ? &arr->data[array_len(arr)+pos] : NULL; \
 	} \
 	\
-	int __array_find(name)(name *arr, T *what) \
+	int __array_find(name)(struct name *arr, T *what) \
 	{ \
+		if (!arr) \
+			return EACCES; \
 		if (!arr->comparator) \
 			return -EPERM; \
 		\
@@ -114,9 +121,9 @@
 		return -ENOENT; \
 	} \
 	\
-	name *__array_new(name)() \
+	struct name *__array_new(name)() \
 	{ \
-		name *arr = (name *) calloc(1, sizeof(name)); \
+		struct name *arr = (struct name *) calloc(1, sizeof(struct name)); \
 		if (!arr) \
 			return NULL; \
 		arr->capacity = 10; \
@@ -146,7 +153,7 @@
 		T *(*at)(struct name *arr, int pos); \
 		int (*find)(struct name *arr, T *item); \
 		int (*comparator)(T *item1, T *item2); \
-	} name; \
+	} name##_t; \
 	\
 	__array_new_gen(T, name)
 
