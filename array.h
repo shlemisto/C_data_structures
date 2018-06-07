@@ -109,7 +109,7 @@
 	int __array_find(name)(struct name *arr, T *what) \
 	{ \
 		if (!arr) \
-			return EACCES; \
+			return -EACCES; \
 		if (!arr->comparator) \
 			return -EPERM; \
 		\
@@ -138,6 +138,7 @@
 		arr->pop  = __array_pop(name); \
 		arr->at   = __array_at(name); \
 		arr->find = __array_find(name); \
+		arr->comparator = NULL; \
 		\
 		return arr; \
 	}
