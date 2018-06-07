@@ -1,5 +1,5 @@
 # c_array
-simple array implementation in C
+Simple array implementation in C.
 
 Code example:
 ```
@@ -80,4 +80,9 @@ int main(void)
 
 	return 0;
 }
+```
+
+To compile:
+```
+gcc -o array array.c
 ```
