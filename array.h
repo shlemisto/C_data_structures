@@ -7,11 +7,11 @@
 
 #define __aind(name) __i_ ## name
 
-#define __array_push(name)  __arr_## name ##_push
-#define __array_pop(name)   __arr_## name ##_pop
-#define __array_at(name)    __arr_## name ##_at
-#define __array_find(name)  __arr_## name ##_find
-#define __array_new(name)   __arr_## name ##_new
+#define __array_push(name)	__arr_## name ##_push
+#define __array_pop(name)	__arr_## name ##_pop
+#define __array_at(name)	__arr_## name ##_at
+#define __array_find(name)	__arr_## name ##_find
+#define __array_new(name)	__arr_## name ##_new
 
 #define array_new(name) __array_new(name)()
 #define array_len(arr) arr->len
@@ -27,15 +27,17 @@
 	})
 #define array_push_array(arr, from, len) \
 	int __aind(from) = 0; \
-	for ( ; __aind(from) < len; __aind(from)++) \
+	for ( ; __aind(from) < (len); __aind(from)++) \
 		array_push(arr, &from[__aind(from)]);
 
 
-#define array_find(arr, what) arr->find(arr, what)
-#define array_find_val(arr, val) ({ \
+#define array_find_from(arr, what, pos) arr->find(arr, what, pos)
+#define array_find_val_from(arr, val, pos) ({ \
 		__typeof__(val) __item = (val); \
-		arr->find(arr, &__item); \
+		arr->find(arr, &__item, pos); \
 	})
+#define array_find(arr, what) array_find_from(arr, what, 0)
+#define array_find_val(arr, val) array_find_val_from(arr, val, 0)
 
 #define array_free(arr) \
 	if (arr) { \
@@ -43,10 +45,13 @@
 		free(arr); \
 	}
 
-#define array_for_each(iter, arr) \
+// note: pos >= 0
+#define __array_for_each(iter, arr, pos) \
 	__typeof(arr->data) iter; \
-	int __aind(iter) = 0; \
-	for ( ; __aind(iter) < array_len(arr) && (iter = array_at(arr, __aind(iter)), 1); ++__aind(iter))
+	int __aind(iter) = -ENOENT; \
+	for (__aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = array_at(arr, __aind(iter)), 1); ++__aind(iter))
+#define array_for_each(iter, arr) \
+	__array_for_each(iter, arr, 0)
 
 #define array_for_each_val(iter, arr) \
 	__typeof(array_at_val(arr, 0)) iter; \
@@ -106,14 +111,14 @@
 			return pos >= -array_len(arr) ? &arr->data[array_len(arr)+pos] : NULL; \
 	} \
 	\
-	int __array_find(name)(struct name *arr, T *what) \
+	int __array_find(name)(struct name *arr, T *what, int pos) \
 	{ \
 		if (!arr) \
 			return -EACCES; \
 		if (!arr->comparator) \
 			return -EPERM; \
 		\
-		array_for_each(iter, arr) { \
+		__array_for_each(iter, arr, pos) { \
 			if (arr->comparator(iter, what)) \
 				return __aind(iter); \
 		} \
@@ -152,7 +157,7 @@
 		int (*push)(struct name *arr, T *item); \
 		int (*pop)(struct name *arr, int pos); \
 		T *(*at)(struct name *arr, int pos); \
-		int (*find)(struct name *arr, T *item); \
+		int (*find)(struct name *arr, T *item, int pos); \
 		int (*comparator)(T *item1, T *item2); \
 	} name##_t; \
 	\
