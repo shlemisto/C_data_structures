@@ -61,8 +61,6 @@
 #define __array_new_gen(T, name) \
 	int __array_push(name)(struct name *arr, T *item) \
 	{ \
-		if (!arr) \
-			return EACCES; \
 		if (arr->capacity == arr->len) { \
 			arr->capacity *= 2; \
 			arr->data = (T *) realloc(arr->data, arr->capacity * sizeof(T)); \
@@ -77,8 +75,6 @@
 	\
 	int __array_pop(name)(struct name *arr, int pos) \
 	{ \
-		if (!arr) \
-			return EACCES; \
 		if (array_is_empty(arr)) \
 			return ENODATA; \
 		if ((pos >= array_len(arr)) || (pos < -array_len(arr))) \
@@ -103,8 +99,6 @@
 	\
 	T *__array_at(name)(struct name *arr, int pos) \
 	{ \
-		if (!arr) \
-			return NULL; \
 		if (pos >= 0) \
 			return pos < array_len(arr) ? &arr->data[pos] : NULL; \
 		else \
@@ -113,8 +107,6 @@
 	\
 	int __array_find(name)(struct name *arr, T *what, int pos) \
 	{ \
-		if (!arr) \
-			return -EACCES; \
 		if (!arr->comparator) \
 			return -EPERM; \
 		\
