@@ -50,8 +50,8 @@
 	__typeof(arr->data) iter; \
 	int __aind(iter) = -ENOENT; \
 	for (__aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = array_at(arr, __aind(iter)), 1); ++__aind(iter))
-#define array_for_each(iter, arr) \
-	__array_for_each(iter, arr, 0)
+#define array_for_each(arr, iter) \
+	__array_for_each(arr, iter, 0)
 
 #define array_for_each_val(arr, iter) \
 	__typeof(array_at_val(arr, 0)) iter; \
