@@ -41,7 +41,7 @@ int main(void)
 	array_pop(iarr, 0);
 	array_pop(iarr, -1);
 
-	array_for_each_val(val, iarr)
+	array_for_each_val(iarr, val)
 		printf("arr[%d] = %d\n", __aind(val), val);
 
 	array_free(iarr);
@@ -65,7 +65,7 @@ int main(void)
 	array_push_val(darr, ((data_t) { .a = 23, .b = -2.123 }));
 	array_push(darr, &d);
 
-	array_for_each(iter, darr)
+	array_for_each(darr, iter)
 		printf("a = %d, b = %f\n", iter->a, iter->b);
 
 	data_t *at = array_at(darr, -1);

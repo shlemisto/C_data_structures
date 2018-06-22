@@ -46,14 +46,14 @@
 	}
 
 // note: pos >= 0
-#define __array_for_each(iter, arr, pos) \
+#define __array_for_each(arr, iter, pos) \
 	__typeof(arr->data) iter; \
 	int __aind(iter) = -ENOENT; \
 	for (__aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = array_at(arr, __aind(iter)), 1); ++__aind(iter))
 #define array_for_each(iter, arr) \
 	__array_for_each(iter, arr, 0)
 
-#define array_for_each_val(iter, arr) \
+#define array_for_each_val(arr, iter) \
 	__typeof(array_at_val(arr, 0)) iter; \
 	int __aind(iter) = 0; \
 	for ( ; __aind(iter) < array_len(arr) && (iter = array_at_val(arr, __aind(iter)), 1); ++__aind(iter))
@@ -110,7 +110,7 @@
 		if (!arr->comparator) \
 			return -EPERM; \
 		\
-		__array_for_each(iter, arr, pos) { \
+		__array_for_each(arr, iter, pos) { \
 			if (arr->comparator(iter, what)) \
 				return __aind(iter); \
 		} \
