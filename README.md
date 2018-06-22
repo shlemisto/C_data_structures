@@ -71,10 +71,10 @@ int main(void)
 	data_t *at = array_at(darr, -1);
 	printf("darr[-1] = { a = %d, b = %f }\n", at->a, at->b);
 
-	int ind = array_find_val(darr, ((data_t) { .a = 23, .b = -2.0 }));
-	printf("%s\n", ind < 0 ? "not found" : "found");
+	data_t *ind = array_find_val(darr, ((data_t) { .a = 23, .b = -2.0 }));
+	printf("%s\n", !ind ? "not found" : "found");
 	ind = array_find(darr, &d);
-	printf("%s\n", ind < 0 ? "not found" : "found");
+	printf("%s\n", !ind ? "not found" : "found");
 
 	array_free(darr);
 

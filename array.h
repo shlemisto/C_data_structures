@@ -105,17 +105,17 @@
 			return pos >= -array_len(arr) ? &arr->data[array_len(arr)+pos] : NULL; \
 	} \
 	\
-	int __array_find(name)(struct name *arr, T *what, int pos) \
+	T *__array_find(name)(struct name *arr, T *what, int pos) \
 	{ \
 		if (!arr->comparator) \
-			return -EPERM; \
+			return NULL; \
 		\
 		__array_for_each(arr, iter, pos) { \
 			if (arr->comparator(iter, what)) \
-				return __aind(iter); \
+				return iter; \
 		} \
 		\
-		return -ENOENT; \
+		return NULL; \
 	} \
 	\
 	struct name *__array_new(name)() \
@@ -149,7 +149,7 @@
 		int (*push)(struct name *arr, T *item); \
 		int (*pop)(struct name *arr, int pos); \
 		T *(*at)(struct name *arr, int pos); \
-		int (*find)(struct name *arr, T *item, int pos); \
+		T *(*find)(struct name *arr, T *item, int pos); \
 		int (*comparator)(T *item1, T *item2); \
 	} name##_t; \
 	\
