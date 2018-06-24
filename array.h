@@ -41,6 +41,12 @@
 
 #define array_free(arr) \
 	if (arr) { \
+		if (arr->free_item) { \
+			int i; \
+			int len = array_len(arr); \
+			for (i = 0 ; i < len; ++i) \
+				arr->free_item(array_at(arr, i)); \
+		} \
 		free(arr->data); \
 		free(arr); \
 	}
@@ -136,6 +142,7 @@
 		arr->at   = __array_at(name); \
 		arr->find = __array_find(name); \
 		arr->comparator = NULL; \
+		arr->free_item = NULL; \
 		\
 		return arr; \
 	}
@@ -151,6 +158,9 @@
 		T *(*at)(struct name *arr, int pos); \
 		T *(*find)(struct name *arr, T *item, int pos); \
 		int (*comparator)(T *item1, T *item2); \
+		\
+		/* usefull for array of pointers */ \
+		void (*free_item)(T *item); \
 	} name##_t; \
 	\
 	__array_new_gen(T, name)
