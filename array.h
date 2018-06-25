@@ -247,7 +247,7 @@
 		T *(*find)(struct name *arr, T *item, int pos); \
 		int (*comparator)(T *item1, T *item2); \
 		\
-		/* usefull for array of pointers */ \
+		/* special functions for array of pointers */ \
 		void (*item_destructor)(T item); \
 		int (*comparator_p)(T item1, T item2); \
 		T (*find_p)(struct name *arr, T item, int pos); \
