@@ -13,12 +13,17 @@ typedef struct data {
 	float b;
 } data_t;
 
-array_generator(data_t, data_array); // or array_generator(struct data, data_array)
+parray_generator(struct data *, data_array);
 array_generator(int, int_array);
 
 int data_comparator(data_t *item1, data_t *item2)
 {
 	return (item1->a == item2->a) && (item1->b == item2->b);
+}
+
+void data_destructor(data_t *d)
+{
+	free(d);
 }
 
 int main(void)
@@ -39,7 +44,7 @@ int main(void)
 	array_push_array(iarr, values, ARRAY_LEN(values));
 
 	array_pop(iarr, 0);
-	array_pop(iarr, -1);
+	array_pop(iarr, 0);
 
 	array_for_each_val(iarr, val)
 		printf("arr[%d] = %d\n", __aind(val), val);
@@ -48,35 +53,51 @@ int main(void)
 
 	printf("\n===============\n\n");
 
-	darr = array_new(data_array);
+	darr = parray_new(data_array);
 	if (!darr) {
 		printf("no memory");
 		return ENOMEM;
 	}
 
-	array_set_comparator(darr, data_comparator);
+	parray_set_comparator(darr, data_comparator);
+	parray_set_item_destructor(darr, data_destructor);
 
-	data_t d;
-	d.a = 231;
-	d.b = -23.084124;
+	for (i = 0; i < 10; ++i) {
+		data_t *pd = (data_t *) malloc(sizeof(data_t));
+		if (pd) {
+			pd->a = i;
+			pd->b = i + 1.34;
 
-	array_push_val(darr, ((data_t) { .a = 1, .b = 0.221 }));
-	array_push_val(darr, ((data_t) { .a = 5, .b = 2.123 }));
-	array_push_val(darr, ((data_t) { .a = 23, .b = -2.123 }));
-	array_push(darr, &d);
+			/*printf("alloc %llx\n", (void *) pd);*/
+			parray_push(darr, pd);
+		}
+	}
 
-	array_for_each(darr, iter)
-		printf("a = %d, b = %f\n", iter->a, iter->b);
+	parray_pop(darr, 0);
+	parray_pop(darr, -2);
+	parray_pop(darr, -1);
 
-	data_t *at = array_at(darr, -1);
-	printf("darr[-1] = { a = %d, b = %f }\n", at->a, at->b);
+	for (i = 0; i < 10; ++i) {
+		data_t *pd = (data_t *) malloc(sizeof(data_t));
+		if (pd) {
+			pd->a = 2*i;
+			pd->b = -i + 1.34;
 
-	data_t *ind = array_find_val(darr, ((data_t) { .a = 23, .b = -2.0 }));
-	printf("%s\n", !ind ? "not found" : "found");
-	ind = array_find(darr, &d);
-	printf("%s\n", !ind ? "not found" : "found");
+			/*printf("alloc %llx\n", (void *) pd);*/
+			parray_push(darr, pd);
+		}
+	}
 
-	array_free(darr);
+	parray_for_each(darr, pd)
+		printf("%d %f\n", pd->a, pd->b);
+
+	data_t dd = { .a = 0, .b = 1 };
+	if (!parray_find(darr, &dd));
+		printf("not found\n");
+	if (parray_find(darr, parray_at(darr, -1)));
+		printf("found\n");
+
+	parray_free(darr);
 
 	return 0;
 }
