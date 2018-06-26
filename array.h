@@ -15,6 +15,7 @@
 
 #define array_new(name) __array_new(name)()
 #define array_len(arr) arr->len
+#define array_data(arr) arr->data
 #define array_set_comparator(arr, c) arr->comparator = c
 #define array_is_empty(arr) arr->len == 0
 #define array_at(arr, i) arr->at(arr, i)
@@ -113,7 +114,7 @@
 			return NULL; \
 		\
 		__array_for_each(arr, iter, pos) { \
-			if (arr->comparator(iter, what)) \
+			if (0 == arr->comparator((const void *) iter, (const void *) what)) \
 				return iter; \
 		} \
 		\
@@ -151,7 +152,8 @@
 #define __parray_new(name)	__parr_## name ##_new
 
 #define parray_new(name) __parray_new(name)()
-#define parray_len(arr) array_len()arr
+#define parray_len(arr) array_len(arr)
+#define parray_data(arr) array_data(arr)
 #define parray_is_empty(arr) array_is_empty(arr)
 
 #define parray_set_item_destructor(arr, d) arr->item_destructor = d
@@ -170,7 +172,7 @@
 		__item ? *__item : NULL; \
 	})
 #define __parray_for_each(arr, iter, pos) \
-	__typeof(*arr->data) iter; \
+	__typeof(arr->data[0]) iter; \
 	int __aind(iter) = -ENOENT; \
 	for (__aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = parray_at(arr, __aind(iter)), 1); ++__aind(iter))
 #define parray_for_each(arr, iter) \
@@ -201,7 +203,7 @@
 			return NULL; \
 		\
 		__parray_for_each(arr, iter, pos) { \
-			if (arr->comparator_p(iter, what)) \
+			if (0 == arr->comparator_p((const void *) &iter, (const void *) &what)) \
 				return iter; \
 		} \
 		\
@@ -245,11 +247,11 @@
 		int (*pop)(struct name *arr, int pos); \
 		T *(*at)(struct name *arr, int pos); \
 		T *(*find)(struct name *arr, T *item, int pos); \
-		int (*comparator)(T *item1, T *item2); \
+		int (*comparator)(const void *item1, const void *item2); \
 		\
 		/* special functions for array of pointers */ \
 		void (*item_destructor)(T item); \
-		int (*comparator_p)(T item1, T item2); \
+		int (*comparator_p)(const void *item1, const void *item2); \
 		T (*find_p)(struct name *arr, T item, int pos); \
 	} name##_t; \
 	\
