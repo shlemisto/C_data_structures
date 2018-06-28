@@ -122,7 +122,7 @@ int main(void)
 		printf("%d %f\n", pd->a, pd->b);
 
 	data_t dd = { .a = -3, .b = 1 };
-	if (!parray_find(darr, &dd));
+	if (!parray_find(darr, &dd))
 		printf("not found\n");
 	if (parray_find(darr, parray_at(darr, -2)))
 		printf("found\n");
