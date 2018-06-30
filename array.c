@@ -102,7 +102,7 @@ int main(void)
 				ppd[i] = (data_t *) calloc(1, sizeof(data_t));
 				if (ppd[i]) {
 					ppd[i]->a = i;
-					ppd[i]->b = -i;
+					ppd[i]->b = -i*i;
 					ppd[i]->pad = NULL;
 				} else
 					flag = 0;
@@ -110,6 +110,10 @@ int main(void)
 
 		if (flag)
 			parray_push_array(darr, ppd, 10);
+		else {
+			for (i = 0; i < 10; ++i)
+				free(ppd[i]);
+		}
 		free(ppd);
 	}
 

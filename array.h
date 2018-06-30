@@ -9,6 +9,7 @@
 // get index from iterator
 #define __aind(name) __i_ ## name
 
+#define __array_push_array(name)  __arr_## name ##_push_array
 #define __array_push(name)	 __arr_## name ##_push
 #define __array_pop(name)	 __arr_## name ##_pop
 #define __array_pop_by_ind(name) __arr_## name ##_pop_by_ind
@@ -26,12 +27,7 @@
 #define array_pop(arr, pos) arr->pop(arr, pos)
 #define array_pop_by_ind(arr, pos) arr->pop_by_ind(arr, pos)
 #define array_push(arr, item) arr->push(arr, item)
-#define array_push_array(arr, from, len) \
-	do { \
-		int __aind(from) = 0; \
-		for ( ; __aind(from) < (len); __aind(from)++) \
-			array_push(arr, &from[__aind(from)]); \
-	} while (0);
+#define array_push_array(arr, from, len) arr->push_array(arr, from, len)
 #define array_find_from(arr, what, pos) arr->find(arr, what, pos)
 #define array_find(arr, what) array_find_from(arr, what, 0)
 #define array_find_val(arr, val) array_find_val_from(arr, val, 0)
@@ -77,6 +73,15 @@
 		memcpy((void *) &arr->data[arr->len++], (void *) item, sizeof(T)); \
 		\
 		return 0; \
+	} \
+	int __array_push_array(name)(struct name *arr, T *from, int len) \
+	{ \
+		int ret = 0; \
+		for (int i = 0 ; i < len; ++i) { \
+			if ((ret = __array_push(name)(arr, &from[i]))) \
+			    break; \
+		} \
+		return ret; \
 	} \
 	\
 	int __array_pop_by_ind(name)(struct name *arr, int pos) \
@@ -152,6 +157,7 @@
 			return NULL; \
 		} \
 		\
+		arr->push_array = __array_push_array(name); \
 		arr->push = __array_push(name); \
 		arr->pop = __array_pop(name); \
 		arr->at = __array_at(name); \
@@ -177,12 +183,7 @@
 #define parray_set_item_destructor(arr, d) arr->item_destructor_p = d
 #define parray_set_comparator(arr, c) arr->comparator = c
 #define parray_push(arr, item) arr->push_p(arr, item)
-#define parray_push_array(arr, from, len) \
-	do { \
-		int __aind(from) = 0; \
-		for ( ; __aind(from) < (len); __aind(from)++) \
-			parray_push(arr, from[__aind(from)]); \
-	} while (0);
+#define parray_push_array(arr, from, len) arr->push_array(arr, from, len)
 #define parray_pop_by_ind(arr, pos) arr->pop_by_ind(arr, pos)
 #define parray_pop(arr, addr) arr->pop_p(arr, addr)
 #define parray_at(arr, i) arr->at_p(arr, i)
@@ -291,6 +292,7 @@
 			return NULL; \
 		} \
 		\
+		arr->push_array = __array_push_array(name); \
 		arr->push_p = __parray_push(name); \
 		arr->pop_p = __parray_pop(name); \
 		arr->pop_by_ind = __parray_pop_by_ind(name); \
@@ -316,6 +318,7 @@
 		int (*comparator)(const void *item1, const void *item2); \
 		int (*pop)(struct name *arr, T *addr); \
 		T *(*find)(struct name *arr, T *item, int pos); \
+		int (*push_array)(struct name *arr, T *from, int len); \
 		\
 		/* special functions for array of pointers */ \
 		int (*push_p)(struct name *arr, T item); \
