@@ -40,6 +40,7 @@
 	if (arr) { \
 		free(arr->data); \
 		free(arr); \
+		arr = NULL;
 	}
 
 // note: pos >= 0
@@ -218,6 +219,7 @@
 		\
 		free(arr->data); \
 		free(arr); \
+		arr = NULL;
 	}
 
 #define parray_generator(T, name) \
