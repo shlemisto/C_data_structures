@@ -45,13 +45,11 @@
 
 // note: pos >= 0
 #define __array_for_each(iter, arr, pos) \
-	int __aind(iter) = -ENOENT; \
-	for (__aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = array_at(arr, __aind(iter)), 1); ++__aind(iter))
+	for (int __aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = array_at(arr, __aind(iter)), 1); ++__aind(iter))
 #define array_for_each(iter, arr) \
 	__array_for_each(iter, arr, 0)
 #define array_for_each_val(iter, arr) \
-	int __aind(iter) = 0; \
-	for ( ; __aind(iter) < array_len(arr) && (iter = array_at_val(arr, __aind(iter)), 1); ++__aind(iter))
+	for (int __aind(iter) = 0 ; __aind(iter) < array_len(arr) && (iter = array_at_val(arr, __aind(iter)), 1); ++__aind(iter))
 
 #define __array_new_gen(T, name) \
 	typedef T (*name##_item_constructor_p)(); \
@@ -191,8 +189,7 @@
 #define parray_pop(arr, addr) arr->pop_p(arr, addr)
 #define parray_at(arr, i) arr->at_p(arr, i)
 #define __parray_for_each(iter, arr, pos) \
-	int __aind(iter) = -ENOENT; \
-	for (__aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = parray_at(arr, __aind(iter)), 1); ++__aind(iter))
+	for (int __aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = parray_at(arr, __aind(iter)), 1); ++__aind(iter))
 #define parray_for_each(iter, arr) __parray_for_each(iter, arr, 0)
 #define parray_find_from(arr, what, pos) arr->find_p(arr, what, pos)
 #define parray_find(arr, what) parray_find_from(arr, what, 0)
