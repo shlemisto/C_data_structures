@@ -75,7 +75,7 @@ int main(void)
 
 	qsort(array_data(iarr), array_len(iarr), sizeof(int), int_comparator);
 
-	array_for_each(iarr, val)
+	array_for_each(val, iarr)
 		printf("arr[%d] = %d\n", __aind(val), *val);
 
 	array_free(iarr);
@@ -124,7 +124,7 @@ int main(void)
 	
 	/*parray_purge(darr);*/
 
-	parray_for_each(darr, pd) {
+	parray_for_each(pd, darr) {
 		printf("%d %f\n", pd->a, pd->b);
 	}
 

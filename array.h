@@ -44,13 +44,13 @@
 	}
 
 // note: pos >= 0
-#define __array_for_each(arr, iter, pos) \
+#define __array_for_each(iter, arr, pos) \
 	__typeof(arr->data) iter = NULL; \
 	int __aind(iter) = -ENOENT; \
 	for (__aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = array_at(arr, __aind(iter)), 1); ++__aind(iter))
-#define array_for_each(arr, iter) \
-	__array_for_each(arr, iter, 0)
-#define array_for_each_val(arr, iter) \
+#define array_for_each(iter, arr) \
+	__array_for_each(iter, arr, 0)
+#define array_for_each_val(iter, arr) \
 	__typeof(array_at_val(arr, 0)) iter; \
 	int __aind(iter) = 0; \
 	for ( ; __aind(iter) < array_len(arr) && (iter = array_at_val(arr, __aind(iter)), 1); ++__aind(iter))
@@ -114,7 +114,7 @@
 		int ret = ENODATA; \
 		if (!addr) \
 			return ret; \
-		array_for_each(arr, iter) { \
+		array_for_each(iter, arr) { \
 			if (iter == addr) { \
 				ret = __array_pop_by_ind(name)(arr, __aind(iter)); \
 				break; \
@@ -137,7 +137,7 @@
 		if (!arr->comparator || !what) \
 			return NULL; \
 		\
-		__array_for_each(arr, iter, pos) { \
+		__array_for_each(iter, arr, pos) { \
 			if (0 == arr->comparator((const void *) iter, (const void *) what)) \
 				return iter; \
 		} \
@@ -188,11 +188,11 @@
 #define parray_pop_by_ind(arr, pos) arr->pop_by_ind(arr, pos)
 #define parray_pop(arr, addr) arr->pop_p(arr, addr)
 #define parray_at(arr, i) arr->at_p(arr, i)
-#define __parray_for_each(arr, iter, pos) \
+#define __parray_for_each(iter, arr, pos) \
 	__typeof(arr->data[0]) iter = NULL; \
 	int __aind(iter) = -ENOENT; \
 	for (__aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = parray_at(arr, __aind(iter)), 1); ++__aind(iter))
-#define parray_for_each(arr, iter) __parray_for_each(arr, iter, 0)
+#define parray_for_each(iter, arr) __parray_for_each(iter, arr, 0)
 #define parray_find_from(arr, what, pos) arr->find_p(arr, what, pos)
 #define parray_find(arr, what) parray_find_from(arr, what, 0)
 #define parray_item_alloc(arr) arr->item_constructor_p ? arr->item_constructor_p() : NULL
@@ -258,7 +258,7 @@
 		int ret = ENODATA; \
 		if (!addr) \
 			return ret; \
-		parray_for_each(arr, iter) { \
+		parray_for_each(iter, arr) { \
 			if (iter == addr) { \
 				ret = __parray_pop_by_ind(name)(arr, __aind(iter)); \
 				break; \
@@ -273,7 +273,7 @@
 		if (!arr->comparator || !what) \
 			return NULL; \
 		\
-		__parray_for_each(arr, iter, pos) { \
+		__parray_for_each(iter, arr, pos) { \
 			if (0 == arr->comparator((const void *) &iter, (const void *) &what)) \
 				return iter; \
 		} \
