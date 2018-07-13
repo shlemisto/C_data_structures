@@ -45,13 +45,11 @@
 
 // note: pos >= 0
 #define __array_for_each(iter, arr, pos) \
-	__typeof(arr->data) iter = NULL; \
 	int __aind(iter) = -ENOENT; \
 	for (__aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = array_at(arr, __aind(iter)), 1); ++__aind(iter))
 #define array_for_each(iter, arr) \
 	__array_for_each(iter, arr, 0)
 #define array_for_each_val(iter, arr) \
-	__typeof(array_at_val(arr, 0)) iter; \
 	int __aind(iter) = 0; \
 	for ( ; __aind(iter) < array_len(arr) && (iter = array_at_val(arr, __aind(iter)), 1); ++__aind(iter))
 
@@ -112,6 +110,8 @@
 	int __array_pop(name)(struct name *arr, T *addr) \
 	{ \
 		int ret = ENODATA; \
+		__typeof(arr->data) iter = NULL; \
+		\
 		if (!addr) \
 			return ret; \
 		array_for_each(iter, arr) { \
@@ -134,6 +134,8 @@
 	\
 	T *__array_find(name)(struct name *arr, T *what, int pos) \
 	{ \
+		__typeof(arr->data) iter = NULL; \
+		\
 		if (!arr->comparator || !what) \
 			return NULL; \
 		\
@@ -189,7 +191,6 @@
 #define parray_pop(arr, addr) arr->pop_p(arr, addr)
 #define parray_at(arr, i) arr->at_p(arr, i)
 #define __parray_for_each(iter, arr, pos) \
-	__typeof(arr->data[0]) iter = NULL; \
 	int __aind(iter) = -ENOENT; \
 	for (__aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = parray_at(arr, __aind(iter)), 1); ++__aind(iter))
 #define parray_for_each(iter, arr) __parray_for_each(iter, arr, 0)
@@ -256,6 +257,8 @@
 	int __parray_pop(name)(struct name *arr, T addr) \
 	{ \
 		int ret = ENODATA; \
+		__typeof(arr->data[0]) iter = NULL; \
+		\
 		if (!addr) \
 			return ret; \
 		parray_for_each(iter, arr) { \
@@ -270,6 +273,8 @@
 	\
 	T __parray_find(name)(struct name *arr, T what, int pos) \
 	{ \
+		__typeof(arr->data[0]) iter = NULL; \
+		\
 		if (!arr->comparator || !what) \
 			return NULL; \
 		\
