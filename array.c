@@ -11,8 +11,8 @@ typedef struct data {
 	void *pad;
 } data_t;
 
-parray_generator(struct data *, data_array)
-array_generator(int, int_array)
+/*parray_generator(struct data *, data_array)*/
+/*array_generator(int, int_array)*/
 
 int data_comparator(const void *v1, const void *v2)
 {
@@ -76,7 +76,7 @@ int main(void)
 	qsort(array_data(iarr), array_len(iarr), sizeof(int), int_comparator);
 
 	int *val = NULL;
-	array_for_each(val, iarr)
+	array_for_each(iarr, val)
 		printf("arr[%d] = %d\n", __aind(val), *val);
 
 	array_free(iarr);
@@ -126,7 +126,7 @@ int main(void)
 	/*parray_purge(darr);*/
 
 	data_t *pd;
-	parray_for_each(pd, darr) {
+	parray_for_each(darr, pd) {
 		printf("%d %f\n", pd->a, pd->b);
 	}
 

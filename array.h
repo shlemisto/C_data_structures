@@ -44,11 +44,11 @@
 	}
 
 // note: pos >= 0
-#define __array_for_each(iter, arr, pos) \
+#define __array_for_each(arr, iter, pos) \
 	for (int __aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = array_at(arr, __aind(iter)), 1); ++__aind(iter))
-#define array_for_each(iter, arr) \
-	__array_for_each(iter, arr, 0)
-#define array_for_each_val(iter, arr) \
+#define array_for_each(arr, iter) \
+	__array_for_each(arr, iter, 0)
+#define array_for_each_val(arr, iter) \
 	for (int __aind(iter) = 0 ; __aind(iter) < array_len(arr) && (iter = array_at_val(arr, __aind(iter)), 1); ++__aind(iter))
 
 #define __array_new_gen(T, name) \
@@ -56,7 +56,7 @@
 	typedef void (*name##_item_destructor_p)(T item); \
 	typedef int (*name##_comparator)(const void *v1, const void *v2); \
 	\
-	int __array_push(name)(struct name *arr, T *item) \
+	static int __array_push(name)(struct name *arr, T *item) \
 	{ \
 		if (!item) \
 			return EPERM; \
@@ -71,7 +71,7 @@
 		\
 		return 0; \
 	} \
-	int __array_push_array(name)(struct name *arr, T *from, int len) \
+	static int __array_push_array(name)(struct name *arr, T *from, int len) \
 	{ \
 		int ret = 0; \
 		for (int i = 0 ; i < len; ++i) { \
@@ -81,7 +81,7 @@
 		return ret; \
 	} \
 	\
-	int __array_pop_by_ind(name)(struct name *arr, int pos) \
+	static int __array_pop_by_ind(name)(struct name *arr, int pos) \
 	{ \
 		if (array_is_empty(arr)) \
 			return ENODATA; \
@@ -105,14 +105,14 @@
 		return 0; \
 	} \
 	\
-	int __array_pop(name)(struct name *arr, T *addr) \
+	static int __array_pop(name)(struct name *arr, T *addr) \
 	{ \
 		int ret = ENODATA; \
 		__typeof(arr->data) iter = NULL; \
 		\
 		if (!addr) \
 			return ret; \
-		array_for_each(iter, arr) { \
+		array_for_each(arr, iter) { \
 			if (iter == addr) { \
 				ret = __array_pop_by_ind(name)(arr, __aind(iter)); \
 				break; \
@@ -122,7 +122,7 @@
 		return ret; \
 	} \
 	\
-	T *__array_at(name)(struct name *arr, int pos) \
+	static T *__array_at(name)(struct name *arr, int pos) \
 	{ \
 		if (pos >= 0) \
 			return pos < array_len(arr) ? &arr->data[pos] : NULL; \
@@ -130,14 +130,14 @@
 			return pos >= -array_len(arr) ? &arr->data[array_len(arr)+pos] : NULL; \
 	} \
 	\
-	T *__array_find(name)(struct name *arr, T *what, int pos) \
+	static T *__array_find(name)(struct name *arr, T *what, int pos) \
 	{ \
 		__typeof(arr->data) iter = NULL; \
 		\
 		if (!arr->comparator || !what) \
 			return NULL; \
 		\
-		__array_for_each(iter, arr, pos) { \
+		__array_for_each(arr, iter, pos) { \
 			if (0 == arr->comparator((const void *) iter, (const void *) what)) \
 				return iter; \
 		} \
@@ -145,7 +145,7 @@
 		return NULL; \
 	} \
 	\
-	struct name *__array_new(name)(name##_comparator comparator) \
+	static struct name *__array_new(name)(name##_comparator comparator) \
 	{ \
 		struct name *arr = (struct name *) calloc(1, sizeof(struct name)); \
 		if (!arr) \
@@ -188,9 +188,9 @@
 #define parray_pop_by_ind(arr, pos) arr->pop_by_ind(arr, pos)
 #define parray_pop(arr, addr) arr->pop_p(arr, addr)
 #define parray_at(arr, i) arr->at_p(arr, i)
-#define __parray_for_each(iter, arr, pos) \
+#define __parray_for_each(arr, iter, pos) \
 	for (int __aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = parray_at(arr, __aind(iter)), 1); ++__aind(iter))
-#define parray_for_each(iter, arr) __parray_for_each(iter, arr, 0)
+#define parray_for_each(arr, iter) __parray_for_each(arr, iter, 0)
 #define parray_find_from(arr, what, pos) arr->find_p(arr, what, pos)
 #define parray_find(arr, what) parray_find_from(arr, what, 0)
 #define parray_item_alloc(arr) arr->item_constructor_p ? arr->item_constructor_p() : NULL
@@ -223,14 +223,14 @@
 #define parray_generator(T, name) \
 	array_generator(T, name) \
 	\
-	int __parray_push(name)(struct name *arr, T item) \
+	static int __parray_push(name)(struct name *arr, T item) \
 	{ \
 		if (item) \
 			return __array_push(name)(arr, &item); \
 		return EPERM; \
 	} \
 	\
-	T __parray_at(name)(struct name *arr, int pos) \
+	static T __parray_at(name)(struct name *arr, int pos) \
 	{ \
 		T *item = __array_at(name)(arr, pos); \
 		if (item) \
@@ -238,7 +238,7 @@
 		return NULL; \
 	} \
 	\
-	int __parray_pop_by_ind(name)(struct name *arr, int pos) \
+	static int __parray_pop_by_ind(name)(struct name *arr, int pos) \
 	{ \
 		int ret = ENODATA; \
 		T addr = __parray_at(name)(arr, pos); \
@@ -251,14 +251,14 @@
 		return ret; \
 	} \
 	\
-	int __parray_pop(name)(struct name *arr, T addr) \
+	static int __parray_pop(name)(struct name *arr, T addr) \
 	{ \
 		int ret = ENODATA; \
 		__typeof(arr->data[0]) iter = NULL; \
 		\
 		if (!addr) \
 			return ret; \
-		parray_for_each(iter, arr) { \
+		parray_for_each(arr, iter) { \
 			if (iter == addr) { \
 				ret = __parray_pop_by_ind(name)(arr, __aind(iter)); \
 				break; \
@@ -268,14 +268,14 @@
 		return ret; \
 	} \
 	\
-	T __parray_find(name)(struct name *arr, T what, int pos) \
+	static T __parray_find(name)(struct name *arr, T what, int pos) \
 	{ \
 		__typeof(arr->data[0]) iter = NULL; \
 		\
 		if (!arr->comparator || !what) \
 			return NULL; \
 		\
-		__parray_for_each(iter, arr, pos) { \
+		__parray_for_each(arr, iter, pos) { \
 			if (0 == arr->comparator((const void *) &iter, (const void *) &what)) \
 				return iter; \
 		} \
@@ -283,7 +283,7 @@
 		return NULL; \
 	} \
 	\
-	struct name *__parray_new(name)(name##_item_constructor_p constructor, name##_item_destructor_p destructor, name##_comparator comparator) \
+	static struct name *__parray_new(name)(name##_item_constructor_p constructor, name##_item_destructor_p destructor, name##_comparator comparator) \
 	{ \
 		struct name *arr = (struct name *) calloc(1, sizeof(struct name)); \
 		if (!arr) \
