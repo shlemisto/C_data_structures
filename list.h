@@ -20,21 +20,25 @@
 #define list_node(list) __typeof(*list->head)
 #define list_data(list) __typeof(*list->head->data)
 
+static inline void __do_nothing_list(void) {}
+
 #define list_push(list, item) list->push(list, item)
 #define list_pop(list, item) list->pop(list, item)
 #define list_find(list, what) list->find(list, what)
 #define list_new(name, constr, dest, cmp) __list_new(name)(constr, dest, cmp)
+#define list_set_comparator(list, c) list->comparator = c
 #define list_is_empty(list) (list->head == NULL)
 #define list_purge(list) list->purge(list)
 #define list_free(list) list->free(list)
 #define list_new_item(list) list->item_constructor ? list->item_constructor() : NULL
+#define list_item_destructor(list, item) list->item_destructor ? list->item_destructor(item) : __do_nothing_list()
 #define list_for_each(list, iter) \
 	for (list_node(list) *__node = list->head; __node && (iter = __node->data, 1); __node = __node->next)
 
 #define list_generator(T, name) \
 	typedef T (*name##_item_constructor)(); \
 	typedef void (*name##_item_destructor)(T item); \
-	typedef int (*name##_comparator)(const void *v1, const void *v2); \
+	typedef int (*name##_comparator)(T v1, T v2); \
 	\
 	struct list_node_##name { \
 		T data; \
@@ -49,7 +53,7 @@
 		int (*push)(struct name *list, T item); \
 		int (*pop)(struct name *list, T item); \
 		T (*find)(struct name *list, T data); \
-		int (*comparator)(const void *item1, const void *item2); \
+		int (*comparator)(T item1, T item2); \
 		void (*item_destructor)(T item); \
 		T (*item_constructor)(); \
 	} name##_t; \
@@ -63,7 +67,7 @@
 		\
 		while (iter) \
 		{ \
-			if (0 == list->comparator((const void *) iter->data, (const void *) what)) \
+			if (0 == list->comparator(iter->data, what)) \
 				return iter->data; \
 			iter = iter->next; \
 		} \
@@ -94,7 +98,7 @@
 			return EPERM; \
 		\
 		for (curr = list->head; curr; prev = curr, curr = curr->next) { \
-			if (0 == list->comparator((const void *) curr->data, (const void *) val)) { \
+			if (0 == list->comparator(curr->data, val)) { \
 				if (!prev) \
 					list->head = curr->next; \
 				else \

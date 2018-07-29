@@ -14,6 +14,8 @@
 // get index from iterator
 #define __aind(name) __i_ ## name
 
+static inline void __do_nothing_array(void) {}
+
 #define __array_push_array(name)  __arr_## name ##_push_array
 #define __array_push(name)	 __arr_## name ##_push
 #define __array_pop(name)	 __arr_## name ##_pop
@@ -25,6 +27,7 @@
 #define __array_free(name)	 __arr_## name ##_free
 
 #define array_new(name, destructor, comparator) __array_new(name)(destructor, comparator)
+#define array_item_destructor(arr, item) arr->item_destructor ? arr->item_destructor(item) : __do_nothing_array()
 #define array_len(arr) arr->len
 #define array_data(arr) arr->data
 #define array_is_empty(arr) (arr->len == 0)
@@ -150,14 +153,13 @@
 	static int __array_pop(name)(struct name *arr, T *addr) \
 	{ \
 		int ret = ENODATA; \
-		\
-		if (!addr) \
-			return EPERM; \
-		\
 		__typeof(arr->data) iter = NULL; \
 		\
+		if (!addr || !arr->comparator) \
+			return EPERM; \
+		\
 		array_for_each(arr, iter) { \
-			if (iter == addr) { \
+			if (0 == arr->comparator(iter, addr)) { \
 				ret = __array_pop_by_ind(name)(arr, __aind(iter)); \
 				break; \
 			} \
@@ -168,13 +170,13 @@
 	\
 	static T *__array_find(name)(struct name *arr, T *what, int pos) \
 	{ \
+		T *iter = NULL; \
+		\
 		if (!what || !arr->comparator) \
 			return NULL; \
 		\
-		__typeof(arr->data) iter = NULL; \
-		\
 		__array_for_each(arr, iter, pos) { \
-			if (0 == arr->comparator((const void *) iter, (const void *) what)) \
+			if (0 == arr->comparator(iter, what)) \
 				return iter; \
 		} \
 		\
@@ -223,7 +225,8 @@
 #define parray_data(arr) arr->data
 #define parray_is_empty(arr) (arr->len == 0)
 #define parray_set_item_destructor(arr, d) arr->item_destructor_p = d
-#define parray_set_comparator(arr, c) arr->comparator = c
+#define parray_item_destructor(arr, item) arr->item_destructor_p ? arr->item_destructor_p(item) : __do_nothing_array()
+#define parray_set_comparator(arr, c) arr->comparator_p = c
 #define parray_push(arr, item) arr->push_p(arr, item)
 #define parray_push_array(arr, from, len) arr->push_array(arr, from, len)
 #define parray_pop_by_ind(arr, pos) arr->pop_by_ind(arr, pos)
@@ -240,6 +243,7 @@
 #define parray_free(arr) arr->free(arr)
 
 #define parray_generator(T, name) \
+	typedef int (*name##_comparator_p)(T v1, T v2); \
 	typedef T (*name##_item_constructor_p)(); \
 	typedef void (*name##_item_destructor_p)(T item); \
 	\
@@ -307,13 +311,13 @@
 	{ \
 		int ret = ENODATA; \
 		\
-		if (!addr) \
+		if (!addr || !arr->comparator_p) \
 			return EPERM; \
 		\
 		__typeof(arr->data[0]) iter = NULL; \
 		\
 		parray_for_each(arr, iter) { \
-			if (iter == addr) { \
+			if (0 == arr->comparator_p(iter, addr)) { \
 				ret = __parray_pop_by_ind(name)(arr, __aind(iter)); \
 				break; \
 			} \
@@ -324,20 +328,20 @@
 	\
 	static T __parray_find(name)(struct name *arr, T what, int pos) \
 	{ \
-		__typeof(arr->data[0]) iter = NULL; \
+		T iter = NULL; \
 		\
-		if (!arr->comparator || !what) \
+		if (!arr->comparator_p || !what) \
 			return NULL; \
 		\
 		__parray_for_each(arr, iter, pos) { \
-			if (0 == arr->comparator((const void *) &iter, (const void *) &what)) \
+			if (0 == arr->comparator_p(iter, what)) \
 				return iter; \
 		} \
 		\
 		return NULL; \
 	} \
 	\
-	static struct name *__parray_new(name)(name##_item_constructor_p constructor, name##_item_destructor_p destructor, name##_comparator comparator) \
+	static struct name *__parray_new(name)(name##_item_constructor_p constructor, name##_item_destructor_p destructor, name##_comparator_p comparator) \
 	{ \
 		struct name *arr = (struct name *) calloc(1, sizeof(struct name)); \
 		if (!arr) \
@@ -355,7 +359,7 @@
 		arr->pop_p = __parray_pop(name); \
 		arr->pop_by_ind = __parray_pop_by_ind(name); \
 		arr->at_p = __parray_at(name); \
-		arr->comparator = comparator; \
+		arr->comparator_p = comparator; \
 		arr->find_p = __parray_find(name); \
 		arr->item_destructor_p = destructor; \
 		arr->item_constructor_p = constructor; \
@@ -367,7 +371,7 @@
 /* <-- specialization for array of pointers */
 
 #define array_generator(T, name) \
-	typedef int (*name##_comparator)(const void *v1, const void *v2); \
+	typedef int (*name##_comparator)(T *v1, T *v2); \
 	typedef void (*name##_item_destructor)(T *item); \
 	\
 	typedef struct name { \
@@ -378,7 +382,8 @@
 		int (*push)(struct name *arr, T *item); \
 		int (*pop_by_ind)(struct name *arr, int pos); \
 		T *(*at)(struct name *arr, int pos); \
-		int (*comparator)(const void *item1, const void *item2); \
+		int (*comparator)(T *item1, T *item2); \
+		int (*comparator_p)(T item1, T item2); \
 		void (*item_destructor)(T *item); \
 		int (*pop)(struct name *arr, T *addr); \
 		T *(*find)(struct name *arr, T *item, int pos); \
