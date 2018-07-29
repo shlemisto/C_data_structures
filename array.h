@@ -27,7 +27,7 @@ static inline void __do_nothing_array(void) {}
 #define __array_free(name)	 __arr_## name ##_free
 
 #define array_new(name, destructor, comparator) __array_new(name)(destructor, comparator)
-#define array_item_destructor(arr, item) arr->item_destructor ? arr->item_destructor(item) : __do_nothing_array()
+#define array_item_destroy(arr, item) arr->item_destructor ? arr->item_destructor(item) : __do_nothing_array()
 #define array_len(arr) arr->len
 #define array_data(arr) arr->data
 #define array_is_empty(arr) (arr->len == 0)
@@ -225,7 +225,7 @@ static inline void __do_nothing_array(void) {}
 #define parray_data(arr) arr->data
 #define parray_is_empty(arr) (arr->len == 0)
 #define parray_set_item_destructor(arr, d) arr->item_destructor_p = d
-#define parray_item_destructor(arr, item) arr->item_destructor_p ? arr->item_destructor_p(item) : __do_nothing_array()
+#define parray_item_destroy(arr, item) arr->item_destructor_p ? arr->item_destructor_p(item) : __do_nothing_array()
 #define parray_set_comparator(arr, c) arr->comparator_p = c
 #define parray_push(arr, item) arr->push_p(arr, item)
 #define parray_push_array(arr, from, len) arr->push_array(arr, from, len)

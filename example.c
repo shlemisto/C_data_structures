@@ -99,20 +99,20 @@ int main(void)
 		if (d.str) {
 			sprintf(d.str, "%d", d.a);
 			if (array_push(s_arr, &d))
-				array_item_destructor(s_arr, &d);
+				array_item_destroy(s_arr, &d);
 		}
 	}
 
 	for (int i = 0; i < 50; ++i) {
 		data_t *item = parray_new_item(arr);
 		if (parray_push(arr, item))
-			parray_item_destructor(arr, item);
+			parray_item_destroy(arr, item);
 	}
 
 	for (int i = 0; i < 50; ++i) {
 		data_t *item = list_new_item(list);
 		if (list_push(list, item))
-			list_item_destructor(list, item);
+			list_item_destroy(list, item);
 	}
 
 	for (int i = 0; i < 50; ++i) {
@@ -121,7 +121,7 @@ int main(void)
 		if (val) {
 			sprintf(key.key, "%d", rand() % 20);
 			if (map_push(map, key, val))
-				map_item_destructor(map, val);
+				map_item_destroy(map, val);
 		}
 	}
 
