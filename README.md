@@ -1,9 +1,10 @@
-# c_array
-Simple array implementation in C.
+# C data structures
 
-See code example in array.c
+Simple implementation of array, list and map in pure C.
+
+See code example in example.c
 
 To compile:
 ```
-gcc -Wall -pedantic -std=c99 -o array array.c
+gcc -Wall -pedantic -std=c99 -o example exmaple.c
 ```
