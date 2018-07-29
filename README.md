@@ -1,6 +1,6 @@
 # C data structures
 
-Simple implementation of array, list and map in pure C.
+Simple implementation of array, list and map in C.
 
 See code example in example.c
 
