@@ -14,8 +14,6 @@
 #define __map_push(name)      __map_## name ##_push
 #define __map_find(name)      __map_## name ##_find
 #define __map_pop(name)       __map_## name ##_pop
-#define __map_pop_head(name)  __map_## name ##_pop_head
-#define __map_pop_tail(name)  __map_## name ##_pop_tail
 #define __map_new(name)       __map_## name ##_new
 #define __map_free(name)      __map_## name ##_free
 #define __map_purge(name)     __map_## name ##_purge
@@ -81,20 +79,20 @@ static inline void __do_nothing_map(void) {}
 	\
 	static int __map_push(name)(struct name *map, T_key key, T_val val) \
 	{ \
-		list_data(map->list) *temp = NULL; \
+		list_data(map->list) *tmp = NULL; \
 		\
 		if (__map_find(name)(map, key)) \
 			return EEXIST; \
 		\
-		temp = (__map_key_val(name) *) calloc(1, sizeof(__map_key_val(name))); \
-		if (!temp) \
+		tmp = (__map_key_val(name) *) calloc(1, sizeof(__map_key_val(name))); \
+		if (!tmp) \
 			return ENOMEM; \
 		\
-		memcpy(&temp->key, &key, sizeof(key)); \
-		temp->val = val; \
+		memcpy(&tmp->key, &key, sizeof(key)); \
+		tmp->val = val; \
 		\
-		if (list_push(map->list, temp)) { \
-			free(temp); \
+		if (list_push(map->list, tmp)) { \
+			free(tmp); \
 			return ENOMEM; \
 		} \
 		\
@@ -135,21 +133,21 @@ static inline void __do_nothing_map(void) {}
 	static void __map_free(name)(struct name *map) \
 	{ \
 		if(map) { \
-			list_node(map->list) *cursor = map->list->head; \
+			list_node(map->list) *curr = map->list->head; \
 			\
-			while (cursor) \
+			while (curr) \
 			{ \
-				list_node(map->list) *tmp = cursor->next; \
+				list_node(map->list) *tmp = curr->next; \
 				\
 				if (map->item_destructor) \
-					map->item_destructor(cursor->data->val); \
+					map->item_destructor(curr->data->val); \
 				else \
-					free(cursor->data->val); \
+					free(curr->data->val); \
 				\
-				free(cursor->data); \
-				free(cursor); \
+				free(curr->data); \
+				free(curr); \
 				\
-				cursor = tmp; \
+				curr = tmp; \
 			} \
 			\
 			free(map->list); \
@@ -161,21 +159,21 @@ static inline void __do_nothing_map(void) {}
 	\
 	static void __map_purge(name)(struct name *map) \
 	{ \
-		list_node(map->list) *cursor = map->list->head; \
+		list_node(map->list) *curr = map->list->head; \
 		\
-		while (cursor) \
+		while (curr) \
 		{ \
-			list_node(map->list) *tmp = cursor->next; \
+			list_node(map->list) *tmp = curr->next; \
 			\
 			if (map->item_destructor) \
-				map->item_destructor(cursor->data->val); \
+				map->item_destructor(curr->data->val); \
 			else \
-				free(cursor->data->val); \
+				free(curr->data->val); \
 			\
-			free(cursor->data); \
-			free(cursor); \
+			free(curr->data); \
+			free(curr); \
 			\
-			cursor = tmp; \
+			curr = tmp; \
 		} \
 		\
 		map->list->head = NULL; \
