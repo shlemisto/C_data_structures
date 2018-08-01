@@ -23,7 +23,13 @@
 #define map_key(iter) iter->key
 #define map_val(iter) iter->val
 
-static inline void __do_nothing_map(void) {}
+#define __STATIC_IF(cond, if_true, if_false, ...) _Generic(&(int[(!!(cond)) + 1]) { 0 }, \
+    int(*)[2]: if_true, \
+    int(*)[1]: if_false) \
+  (__VA_ARGS__)
+
+#define __key_is_string(key) __builtin_types_compatible_p(__typeof(key), char *)
+static inline void __do_nothing_map() {}
 
 #define map_push(map, key, val) map->push(map, key, val)
 #define map_pop(map, key) map->pop(map, key)
@@ -44,6 +50,24 @@ static inline void __do_nothing_map(void) {}
 		T_key key; \
 		T_val val; \
 	}; \
+	\
+	int __push_if_string_##name(char **to, char *key) \
+	{ \
+		*to = calloc(1, strlen(key)+1); \
+		if (!*to) \
+			return ENOMEM; \
+		memcpy(*to, key, strlen(key)); \
+		return 0; \
+	} \
+	int __push_if_not_string_##name(T_key *to, T_key key) \
+	{ \
+		memcpy(to, &key, sizeof(T_key)); \
+		return 0; \
+	} \
+	void __free_if_string_##name(char *key) \
+	{ \
+		free(key); \
+	} \
 	\
 	typedef T_val (*name##_item_constructor)(); \
 	typedef void (*name##_item_destructor)(T_val val); \
@@ -88,7 +112,10 @@ static inline void __do_nothing_map(void) {}
 		if (!tmp) \
 			return ENOMEM; \
 		\
-		memcpy(&tmp->key, &key, sizeof(key)); \
+		if (__STATIC_IF(__key_is_string(key), __push_if_string_##name, __push_if_not_string_##name, &tmp->key, key)) { \
+			free(tmp); \
+			return ENOMEM; \
+		} \
 		tmp->val = val; \
 		\
 		if (list_push(map->list, tmp)) { \
@@ -120,6 +147,7 @@ static inline void __do_nothing_map(void) {}
 				else \
 					free(curr->data->val); \
 				\
+				__STATIC_IF(__key_is_string(curr->data->key), __free_if_string_##name, __do_nothing_map, curr->data->key); \
 				free(curr->data); \
 				free(curr); \
 				\
@@ -144,6 +172,7 @@ static inline void __do_nothing_map(void) {}
 				else \
 					free(curr->data->val); \
 				\
+				__STATIC_IF(__key_is_string(curr->data->key), __free_if_string_##name, __do_nothing_map, curr->data->key); \
 				free(curr->data); \
 				free(curr); \
 				\
@@ -170,6 +199,7 @@ static inline void __do_nothing_map(void) {}
 			else \
 				free(curr->data->val); \
 			\
+			__STATIC_IF(__key_is_string(curr->data->key), __free_if_string_##name, __do_nothing_map, curr->data->key); \
 			free(curr->data); \
 			free(curr); \
 			\

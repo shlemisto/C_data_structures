@@ -22,6 +22,7 @@ array_generator(data_t, s_data_array)
 parray_generator(data_t *, data_array)
 list_generator(data_t *, data_list)
 map_generator(data_key_t, data_t *, data_map)
+map_generator(char *, data_t *, data_map2)
 
 int data_comparator(data_t *d1, data_t *d2)
 {
@@ -31,6 +32,11 @@ int data_comparator(data_t *d1, data_t *d2)
 int key_comparator(data_key_t k1, data_key_t k2)
 {
 	return strcmp(k1.key, k2.key);
+}
+
+int string_comp(char *k1, char *k2)
+{
+	return strcmp(k1, k2);
 }
 
 void data_destructor(data_t *d)
@@ -74,8 +80,10 @@ int main(void)
 	s_data_array_t *s_arr = NULL;
 	data_list_t *list = NULL;
 	data_map_t *map = NULL;
+	data_map2_t *map2 = NULL;
 	data_t *data = NULL;
 	map_key_val(map) *kv = NULL;
+	map_key_val(map2) *kv2;
 	data_t *find_in_map = NULL;
 
 	srand(time(NULL));
@@ -84,8 +92,9 @@ int main(void)
 	arr = parray_new(data_array, data_constructor, data_destructor, data_comparator);
 	list = list_new(data_list, data_constructor, data_destructor, data_comparator);
 	map = map_new(data_map, data_constructor, data_destructor, key_comparator);
+	map2 = map_new(data_map2, data_constructor, data_destructor, string_comp);
 
-	if (!s_arr || !arr || !list || !map) {
+	if (!s_arr || !arr || !list || !map || !map2) {
 		printf("no memory\n");
 		rv = ENOMEM;
 		goto exit;
@@ -119,10 +128,18 @@ int main(void)
 		data_key_t key = { 0 };
 		data_t *val = map_new_val(map);
 		if (val) {
-			sprintf(key.key, "%d", rand() % 20);
+			sprintf(key.key, "data_key_t %d", rand() % 20);
 			if (map_push(map, key, val))
 				map_item_destroy(map, val);
 		}
+	}
+
+	for (int i = 0; i < 50; ++i) {
+		char s[100] = { 0 };
+		data_t *val = map_new_val(map);
+		sprintf(s, "string %d", rand() % 25);
+		if (map_push(map2, s, val))
+			map_item_destroy(map, val);
 	}
 
 	if (array_pop_by_ind(s_arr, -1))
@@ -137,13 +154,19 @@ int main(void)
 	if (list_pop(list, &((data_t) { .a = 11 })))
 		printf("unable to delete '11' from list; not found in list\n");
 
-	find_in_map = map_find(map, ((data_key_t) { .key = "10" }));
+	find_in_map = map_find(map, ((data_key_t) { .key = "data_key_t 10" }));
 	if (find_in_map) {
-		printf("found { 10: [%d, %s] } delete it!\n", find_in_map->a, find_in_map->str);
-		map_pop(map, ((data_key_t) { .key = "10" }));
+		printf("found { data_key_t 10: [%d, %s] } delete it!\n", find_in_map->a, find_in_map->str);
+		map_pop(map, ((data_key_t) { .key = "data_key_t 10" }));
 	}
 
-	printf("s_arr\n");
+	find_in_map = map_find(map2, ((char *) "string 10"));
+	if (find_in_map) {
+		printf("found { string 10: [%d, %s] } delete it!\n", find_in_map->a, find_in_map->str);
+		map_pop(map2, ((char *) "string 10"));
+	}
+
+	printf("\n\ns_arr\n");
 	array_for_each(s_arr, data)
 		printf("[%d, %s], ", data->a, data->str);
 	printf("\n\n");
@@ -163,11 +186,17 @@ int main(void)
 		printf("{%s: [%d, %s]}\n", map_key(kv).key, map_val(kv)->a, map_val(kv)->str);
 	printf("\n");
 
+	printf("map2\n");
+	map_for_each(map2, kv2)
+		printf("{%s: [%d, %s]}\n", map_key(kv2), map_val(kv2)->a, map_val(kv2)->str);
+	printf("\n");
+
 exit:
 	array_free(s_arr);
 	parray_free(arr);
 	list_free(list);
 	map_free(map);
+	map_free(map2);
 
 	return rv;
 }
