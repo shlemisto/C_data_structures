@@ -53,10 +53,11 @@ static inline void __do_nothing_map() {}
 	\
 	int __push_if_string_##name(char **to, char *key) \
 	{ \
-		*to = calloc(1, strlen(key)+1); \
+		int len = strlen(key); \
+		*to = calloc(1, len+1); \
 		if (!*to) \
 			return ENOMEM; \
-		memcpy(*to, key, strlen(key)); \
+		memcpy(*to, key, len); \
 		return 0; \
 	} \
 	int __push_if_not_string_##name(T_key *to, T_key key) \
