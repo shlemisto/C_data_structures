@@ -31,11 +31,11 @@
 #define __key_is_string(key) __builtin_types_compatible_p(__typeof(key), char *)
 static inline void __do_nothing_map() {}
 
+#define map_new(name) __map_new(name)()
 #define map_push(map, key, val) map->push(map, key, val)
 #define map_pop(map, key) map->pop(map, key)
 #define map_find(map, what) map->find(map, what)
 #define map_is_empty(map) (list_is_empty(map->list))
-#define map_new(name, constr, dest, cmp) __map_new(name)(constr, dest, cmp)
 #define map_set_comparator(map, c) map->comparator = c
 #define map_purge(map) map->purge(map)
 #define map_free(map) map->free(map)
@@ -44,7 +44,7 @@ static inline void __do_nothing_map() {}
 #define map_for_each(map, iter) \
 	for (list_node(map->list) *__node = map->list->head; __node && (iter = __node->data, 1); __node = __node->next)
 
-#define map_generator(T_key, T_val, name) \
+#define map_generator(T_key, T_val, name, __constructor, __destructor, __comparator) \
 	\
 	__map_key_val(name) { \
 		T_key key; \
@@ -70,11 +70,7 @@ static inline void __do_nothing_map() {}
 		free(key); \
 	} \
 	\
-	typedef T_val (*name##_item_constructor)(); \
-	typedef void (*name##_item_destructor)(T_val val); \
-	typedef int (*name##_comparator)(T_key key1, T_key key2); \
-	\
-	list_generator(__map_key_val(name) *, item_list_##name) \
+	list_generator(__map_key_val(name) *, item_list_##name, NULL, NULL, NULL) \
 	\
 	typedef struct name { \
 		struct item_list_##name *list; \
@@ -210,13 +206,13 @@ static inline void __do_nothing_map() {}
 		map->list->head = NULL; \
 	} \
 	\
-	static struct name *__map_new(name)(name##_item_constructor constructor, name##_item_destructor destructor, name##_comparator comparator) \
+	static struct name *__map_new(name)(void) \
 	{ \
 		struct name *map = (struct name *) calloc(1, sizeof(struct name)); \
 		if (!map) \
 			return NULL; \
 		\
-		map->list = list_new(item_list_##name, NULL, NULL, NULL); \
+		map->list = list_new(item_list_##name); \
 		if (!map->list) { \
 			free(map); \
 			return NULL; \
@@ -228,9 +224,9 @@ static inline void __do_nothing_map() {}
 		map->free = __map_free(name); \
 		map->purge = __map_purge(name); \
 		\
-		map->comparator = comparator; \
-		map->item_destructor = destructor; \
-		map->item_constructor = constructor; \
+		map->comparator = __comparator; \
+		map->item_destructor = __destructor; \
+		map->item_constructor = __constructor; \
 		\
 		return map; \
 	}

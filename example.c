@@ -18,12 +18,6 @@ typedef struct data_key {
 	char key[64];
 } data_key_t;
 
-array_generator(data_t, s_data_array)
-parray_generator(data_t *, data_array)
-list_generator(data_t *, data_list)
-map_generator(data_key_t, data_t *, data_map)
-map_generator(char *, data_t *, data_map2)
-
 int data_comparator(data_t *d1, data_t *d2)
 {
 	return d1->a - d2->a;
@@ -73,6 +67,12 @@ data_t *data_constructor()
 	return p;
 }
 
+array_generator(data_t, s_data_array, s_data_destructor, data_comparator)
+parray_generator(data_t *, data_array, data_constructor, data_destructor, data_comparator)
+list_generator(data_t *, data_list, data_constructor, data_destructor, data_comparator)
+map_generator(data_key_t, data_t *, data_map, data_constructor, data_destructor, key_comparator)
+map_generator(char *, data_t *, data_map2, data_constructor, data_destructor, string_comp)
+
 int main(void)
 {
 	int rv = 0;
@@ -88,11 +88,11 @@ int main(void)
 
 	srand(time(NULL));
 
-	s_arr = array_new(s_data_array, s_data_destructor, data_comparator);
-	arr = parray_new(data_array, data_constructor, data_destructor, data_comparator);
-	list = list_new(data_list, data_constructor, data_destructor, data_comparator);
-	map = map_new(data_map, data_constructor, data_destructor, key_comparator);
-	map2 = map_new(data_map2, data_constructor, data_destructor, string_comp);
+	s_arr = array_new(s_data_array);
+	arr = parray_new(data_array);
+	list = list_new(data_list);
+	map = map_new(data_map);
+	map2 = map_new(data_map2);
 
 	if (!s_arr || !arr || !list || !map || !map2) {
 		printf("no memory\n");

@@ -14,7 +14,7 @@
 // get index from iterator
 #define __aind(name) __i_ ## name
 
-static inline void __do_nothing_array(void) {}
+static inline void __do_nothing_array() {}
 
 #define __array_push_array(name)  __arr_## name ##_push_array
 #define __array_push(name)	 __arr_## name ##_push
@@ -26,12 +26,11 @@ static inline void __do_nothing_array(void) {}
 #define __array_purge(name)	 __arr_## name ##_purge
 #define __array_free(name)	 __arr_## name ##_free
 
-#define array_new(name, destructor, comparator) __array_new(name)(destructor, comparator)
+#define array_new(name) __array_new(name)()
 #define array_item_destroy(arr, item) arr->item_destructor ? arr->item_destructor(item) : __do_nothing_array()
 #define array_len(arr) arr->len
 #define array_data(arr) arr->data
 #define array_is_empty(arr) (arr->len == 0)
-#define array_set_comparator(arr, c) arr->comparator = c
 #define array_at(arr, i) arr->at(arr, i)
 #define array_at_val(arr, i) *arr->at(arr, i) // !!! be careful
 #define array_pop(arr, pos) arr->pop(arr, pos)
@@ -52,7 +51,7 @@ static inline void __do_nothing_array(void) {}
 #define array_for_each_val(arr, iter) \
 	for (int __aind(iter) = 0 ; __aind(iter) < array_len(arr) && (iter = array_at_val(arr, __aind(iter)), 1); ++__aind(iter))
 
-#define __array_new_gen(T, name) \
+#define __array_new_gen(T, name, __destructor, __comparator) \
 	\
 	static void __array_purge(name)(struct name *arr) \
 	{ \
@@ -183,7 +182,7 @@ static inline void __do_nothing_array(void) {}
 		return NULL; \
 	} \
 	\
-	static struct name *__array_new(name)(name##_item_destructor destructor, name##_comparator comparator) \
+	static struct name *__array_new(name)(void) \
 	{ \
 		struct name *arr = (struct name *) calloc(1, sizeof(struct name)); \
 		if (!arr) \
@@ -201,8 +200,8 @@ static inline void __do_nothing_array(void) {}
 		arr->pop = __array_pop(name); \
 		arr->at = __array_at(name); \
 		arr->find = __array_find(name); \
-		arr->comparator = comparator; \
-		arr->item_destructor = destructor; \
+		arr->comparator = __comparator; \
+		arr->item_destructor = __destructor; \
 		arr->pop_by_ind = __array_pop_by_ind(name); \
 		arr->free = __array_free(name); \
 		arr->purge = __array_purge(name); \
@@ -220,7 +219,7 @@ static inline void __do_nothing_array(void) {}
 #define __parray_free(name)	  __parr_## name ##_free
 #define __parray_purge(name)	  __parr_## name ##_purge
 
-#define parray_new(name, constructor, destructor, comparator) __parray_new(name)(constructor, destructor, comparator)
+#define parray_new(name) __parray_new(name)()
 #define parray_len(arr) arr->len
 #define parray_data(arr) arr->data
 #define parray_is_empty(arr) (arr->len == 0)
@@ -242,12 +241,8 @@ static inline void __do_nothing_array(void) {}
 #define parray_purge(arr) arr->purge(arr)
 #define parray_free(arr) arr->free(arr)
 
-#define parray_generator(T, name) \
-	typedef int (*name##_comparator_p)(T v1, T v2); \
-	typedef T (*name##_item_constructor_p)(); \
-	typedef void (*name##_item_destructor_p)(T item); \
-	\
-	array_generator(T, name) \
+#define parray_generator(T, name, __constructor, __destructor, __comparator) \
+	array_generator(T, name, NULL, NULL) \
 	\
 	static void __parray_purge(name)(struct name *arr) \
 	{ \
@@ -341,7 +336,7 @@ static inline void __do_nothing_array(void) {}
 		return NULL; \
 	} \
 	\
-	static struct name *__parray_new(name)(name##_item_constructor_p constructor, name##_item_destructor_p destructor, name##_comparator_p comparator) \
+	static struct name *__parray_new(name)(void) \
 	{ \
 		struct name *arr = (struct name *) calloc(1, sizeof(struct name)); \
 		if (!arr) \
@@ -359,10 +354,10 @@ static inline void __do_nothing_array(void) {}
 		arr->pop_p = __parray_pop(name); \
 		arr->pop_by_ind = __parray_pop_by_ind(name); \
 		arr->at_p = __parray_at(name); \
-		arr->comparator_p = comparator; \
+		arr->comparator_p = __comparator; \
 		arr->find_p = __parray_find(name); \
-		arr->item_destructor_p = destructor; \
-		arr->item_constructor_p = constructor; \
+		arr->item_destructor_p = __destructor; \
+		arr->item_constructor_p = __constructor; \
 		arr->free = __parray_free(name); \
 		arr->purge = __parray_purge(name); \
 		\
@@ -370,10 +365,7 @@ static inline void __do_nothing_array(void) {}
 	}
 /* <-- specialization for array of pointers */
 
-#define array_generator(T, name) \
-	typedef int (*name##_comparator)(T *v1, T *v2); \
-	typedef void (*name##_item_destructor)(T *item); \
-	\
+#define array_generator(T, name, __constructor, __destructor) \
 	typedef struct name { \
 		T *data; \
 		int len; \
@@ -400,6 +392,6 @@ static inline void __do_nothing_array(void) {}
 		T (*find_p)(struct name *arr, T item, int pos); \
 	} name##_t; \
 	\
-	__array_new_gen(T, name)
+	__array_new_gen(T, name, __constructor, __destructor)
 
 #endif // __ARRAY_H__

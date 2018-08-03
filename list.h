@@ -20,13 +20,12 @@
 #define list_node(list) __typeof(*list->head)
 #define list_data(list) __typeof(*list->head->data)
 
-static inline void __do_nothing_list(void) {}
+static inline void __do_nothing_list() {}
 
 #define list_push(list, item) list->push(list, item)
 #define list_pop(list, item) list->pop(list, item)
 #define list_find(list, what) list->find(list, what)
-#define list_new(name, constr, dest, cmp) __list_new(name)(constr, dest, cmp)
-#define list_set_comparator(list, c) list->comparator = c
+#define list_new(name) __list_new(name)()
 #define list_is_empty(list) (list->head == NULL)
 #define list_purge(list) list->purge(list)
 #define list_free(list) list->free(list)
@@ -35,11 +34,7 @@ static inline void __do_nothing_list(void) {}
 #define list_for_each(list, iter) \
 	for (list_node(list) *__node = list->head; __node && (iter = __node->data, 1); __node = __node->next)
 
-#define list_generator(T, name) \
-	typedef T (*name##_item_constructor)(); \
-	typedef void (*name##_item_destructor)(T item); \
-	typedef int (*name##_comparator)(T v1, T v2); \
-	\
+#define list_generator(T, name, __constructor, __destructor, __comparator) \
 	struct list_node_##name { \
 		T data; \
 		struct list_node_##name *next; \
@@ -159,7 +154,7 @@ static inline void __do_nothing_list(void) {}
 		} \
 	} \
 	\
-	static struct name *__list_new(name)(name##_item_constructor constructor, name##_item_destructor destructor, name##_comparator comparator) \
+	static struct name *__list_new(name)(void) \
 	{ \
 		struct name *list = (struct name *) calloc(1, sizeof(struct name)); \
 		if (!list) \
@@ -173,9 +168,9 @@ static inline void __do_nothing_list(void) {}
 		list->free = __list_free(name); \
 		list->purge = __list_purge(name); \
 		\
-		list->comparator = comparator; \
-		list->item_destructor = destructor; \
-		list->item_constructor = constructor; \
+		list->comparator = __comparator; \
+		list->item_destructor = __destructor; \
+		list->item_constructor = __constructor; \
 		\
 		return list; \
 	}
