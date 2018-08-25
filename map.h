@@ -51,7 +51,7 @@ static inline void __do_nothing_map() {}
 		T_val val; \
 	}; \
 	\
-	int __push_if_string_##name(char **to, char *key) \
+	static int __push_if_string_##name(char **to, char *key) \
 	{ \
 		int len = strlen(key); \
 		*to = calloc(1, len+1); \
@@ -60,12 +60,12 @@ static inline void __do_nothing_map() {}
 		memcpy(*to, key, len); \
 		return 0; \
 	} \
-	int __push_if_not_string_##name(T_key *to, T_key key) \
+	static int __push_if_not_string_##name(T_key *to, T_key key) \
 	{ \
 		memcpy(to, &key, sizeof(T_key)); \
 		return 0; \
 	} \
-	void __free_if_string_##name(char *key) \
+	static void __free_if_string_##name(char *key) \
 	{ \
 		free(key); \
 	} \
