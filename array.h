@@ -40,7 +40,7 @@ static inline void __do_nothing_array() {}
 #define array_find_from(arr, what, pos) arr->find(arr, what, pos)
 #define array_find(arr, what) array_find_from(arr, what, 0)
 #define array_find_val(arr, val) array_find_val_from(arr, val, 0)
-#define array_free(arr) arr->free(arr)
+#define array_free(arr) if (arr) arr->free(arr)
 #define array_purge(arr) arr->purge(arr)
 
 // note: pos >= 0
@@ -239,7 +239,7 @@ static inline void __do_nothing_array() {}
 #define parray_new_item(arr) arr->item_constructor_p ? arr->item_constructor_p() : NULL
 
 #define parray_purge(arr) arr->purge(arr)
-#define parray_free(arr) arr->free(arr)
+#define parray_free(arr) if (arr) arr->free(arr)
 
 #define parray_generator(T, name, __constructor, __destructor, __comparator) \
 	array_generator(T, name, NULL, NULL) \

@@ -28,7 +28,7 @@ static inline void __do_nothing_list() {}
 #define list_new(name) __list_new(name)()
 #define list_is_empty(list) (list->head == NULL)
 #define list_purge(list) list->purge(list)
-#define list_free(list) list->free(list)
+#define list_free(list) if (list) list->free(list)
 #define list_new_item(list) list->item_constructor ? list->item_constructor() : NULL
 #define list_item_destroy(list, item) list->item_destructor ? list->item_destructor(item) : __do_nothing_list()
 #define list_for_each(list, iter) \

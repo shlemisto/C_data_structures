@@ -38,7 +38,7 @@ static inline void __do_nothing_map() {}
 #define map_is_empty(map) (list_is_empty(map->list))
 #define map_set_comparator(map, c) map->comparator = c
 #define map_purge(map) map->purge(map)
-#define map_free(map) map->free(map)
+#define map_free(map) if (map) map->free(map)
 #define map_new_val(map) map->item_constructor ? map->item_constructor() : NULL
 #define map_item_destroy(map, val) map->item_destructor ? map->item_destructor(val) : __do_nothing_map()
 #define map_for_each(map, iter) \
