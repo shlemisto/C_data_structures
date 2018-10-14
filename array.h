@@ -40,7 +40,7 @@ static inline void __do_nothing_array() {}
 #define array_find_from(arr, what, pos) arr->find(arr, what, pos)
 #define array_find(arr, what) array_find_from(arr, what, 0)
 #define array_find_val(arr, val) array_find_val_from(arr, val, 0)
-#define array_free(arr) if (arr) arr->free(arr)
+#define array_free(arr) ({ if (arr) arr->free(&arr); })
 #define array_purge(arr) arr->purge(arr)
 
 // note: pos >= 0
@@ -64,15 +64,17 @@ static inline void __do_nothing_array() {}
 		arr->capacity = 10; \
 	} \
 	\
-	static void __array_free(name)(struct name *arr) \
+	static void __array_free(name)(struct name **parr) \
 	{ \
+		struct name *arr = *parr; \
+		\
 		if (arr->item_destructor) { \
 			for (int i = 0; i < array_len(arr); ++i) \
 				arr->item_destructor(array_at(arr, i)); \
 		} \
 		free(arr->data); \
 		free(arr); \
-		arr = NULL; \
+		*parr = NULL; \
 	} \
 	\
 	static int __array_push(name)(struct name *arr, T *item) \
@@ -87,7 +89,7 @@ static inline void __do_nothing_array() {}
 			\
 			tmp_arr = (T *) realloc(arr->data, arr->capacity * sizeof(T)); \
 			if (!tmp_arr) { \
-				arr->free(arr); \
+				array_free(arr); \
 				return ENOMEM; \
 			} \
 			\
@@ -239,35 +241,33 @@ static inline void __do_nothing_array() {}
 #define parray_new_item(arr) arr->item_constructor_p ? arr->item_constructor_p() : NULL
 
 #define parray_purge(arr) arr->purge(arr)
-#define parray_free(arr) if (arr) arr->free(arr)
+#define parray_free(arr) ({ if (arr) arr->free(&arr); })
 
 #define parray_generator(T, name, __constructor, __destructor, __comparator) \
 	array_generator(T, name, NULL, NULL) \
 	\
 	static void __parray_purge(name)(struct name *arr) \
 	{ \
-		if (arr) { \
-			if (arr->item_destructor_p) { \
-				for (int i = 0 ; i < array_len(arr); ++i) \
-					arr->item_destructor_p(parray_at(arr, i)); \
-			} \
-			arr->len = 0; \
-			arr->capacity = 10; \
+		if (arr->item_destructor_p) { \
+			for (int i = 0 ; i < array_len(arr); ++i) \
+			arr->item_destructor_p(parray_at(arr, i)); \
 		} \
+		arr->len = 0; \
+		arr->capacity = 10; \
 	} \
-	\
-	static void __parray_free(name)(struct name *arr) \
+\
+	static void __parray_free(name)(struct name **parr) \
 	{ \
-		if (arr) { \
-			if (arr->item_destructor_p) { \
-				for (int i = 0 ; i < array_len(arr); ++i) \
-					arr->item_destructor_p(parray_at(arr, i)); \
-			} \
-			\
-			free(arr->data); \
-			free(arr); \
-			arr = NULL; \
-		} \
+		struct name *arr = *parr; \
+		\
+		if (arr->item_destructor_p) { \
+			for (int i = 0 ; i < array_len(arr); ++i) \
+			arr->item_destructor_p(parray_at(arr, i)); \
+		}\
+		\
+		free(arr->data); \
+		free(arr); \
+		*parr = NULL; \
 	} \
 	\
 	static int __parray_push(name)(struct name *arr, T item) \
@@ -380,7 +380,7 @@ static inline void __do_nothing_array() {}
 		int (*pop)(struct name *arr, T *addr); \
 		T *(*find)(struct name *arr, T *item, int pos); \
 		int (*push_array)(struct name *arr, T *from, int len); \
-		void (*free)(struct name *arr); \
+		void (*free)(struct name **arr); \
 		void (*purge)(struct name *arr); \
 		\
 		/* special functions for array of pointers */ \

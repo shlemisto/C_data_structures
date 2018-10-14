@@ -38,7 +38,7 @@ static inline void __do_nothing_map() {}
 #define map_is_empty(map) (list_is_empty(map->list))
 #define map_set_comparator(map, c) map->comparator = c
 #define map_purge(map) map->purge(map)
-#define map_free(map) if (map) map->free(map)
+#define map_free(map) ({ if (map) map->free(&map); })
 #define map_new_val(map) map->item_constructor ? map->item_constructor() : NULL
 #define map_item_destroy(map, val) map->item_destructor ? map->item_destructor(val) : __do_nothing_map()
 #define map_for_each(map, iter) \
@@ -53,11 +53,8 @@ static inline void __do_nothing_map() {}
 	\
 	static int __push_if_string_##name(char **to, char *key) \
 	{ \
-		int len = strlen(key); \
-		*to = calloc(1, len+1); \
-		if (!*to) \
+		if (NULL == (*to = strdup(key))) \
 			return ENOMEM; \
-		memcpy(*to, key, len); \
 		return 0; \
 	} \
 	static int __push_if_not_string_##name(T_key *to, T_key key) \
@@ -75,7 +72,7 @@ static inline void __do_nothing_map() {}
 	typedef struct name { \
 		struct item_list_##name *list; \
 		\
-		void (*free)(struct name *map); \
+		void (*free)(struct name **map); \
 		void (*purge)(struct name *map); \
 		int (*push)(struct name *map, T_key key, T_val val); \
 		int (*pop)(struct name *map, T_key key); \
@@ -116,6 +113,7 @@ static inline void __do_nothing_map() {}
 		tmp->val = val; \
 		\
 		if (list_push(map->list, tmp)) { \
+			__STATIC_IF(__key_is_string(key), __free_if_string_##name, __do_nothing_map, key); \
 			free(tmp); \
 			return ENOMEM; \
 		} \
@@ -155,36 +153,9 @@ static inline void __do_nothing_map() {}
 		return ENODATA; \
 	} \
 	\
-	static void __map_free(name)(struct name *map) \
+	static void __map_free(name)(struct name **pmap) \
 	{ \
-		if(map) { \
-			list_node(map->list) *curr = map->list->head; \
-			\
-			while (curr) \
-			{ \
-				list_node(map->list) *tmp = curr->next; \
-				\
-				if (map->item_destructor) \
-					map->item_destructor(curr->data->val); \
-				else \
-					free(curr->data->val); \
-				\
-				__STATIC_IF(__key_is_string(curr->data->key), __free_if_string_##name, __do_nothing_map, curr->data->key); \
-				free(curr->data); \
-				free(curr); \
-				\
-				curr = tmp; \
-			} \
-			\
-			free(map->list); \
-			free(map); \
-			\
-			map = NULL; \
-		} \
-	} \
-	\
-	static void __map_purge(name)(struct name *map) \
-	{ \
+		struct name *map = *pmap; \
 		list_node(map->list) *curr = map->list->head; \
 		\
 		while (curr) \
@@ -202,6 +173,18 @@ static inline void __do_nothing_map() {}
 			\
 			curr = tmp; \
 		} \
+		\
+		free(map->list); \
+		free(map); \
+		*pmap = NULL; \
+	} \
+	\
+	static void __map_purge(name)(struct name *map) \
+	{ \
+		map_key_val(map) *kv = NULL; \
+		\
+		map_for_each(map, kv) \
+			map_pop(map, map_key(kv)); \
 		\
 		map->list->head = NULL; \
 	} \

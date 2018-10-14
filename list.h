@@ -28,7 +28,7 @@ static inline void __do_nothing_list() {}
 #define list_new(name) __list_new(name)()
 #define list_is_empty(list) (list->head == NULL)
 #define list_purge(list) list->purge(list)
-#define list_free(list) if (list) list->free(list)
+#define list_free(list) ({ if (list) list->free(&list); })
 #define list_new_item(list) list->item_constructor ? list->item_constructor() : NULL
 #define list_item_destroy(list, item) list->item_destructor ? list->item_destructor(item) : __do_nothing_list()
 #define list_for_each(list, iter) \
@@ -44,7 +44,7 @@ static inline void __do_nothing_list() {}
 		struct list_node_##name *head; \
 		\
 		void (*purge)(struct name *list); \
-		void (*free)(struct name *list); \
+		void (*free)(struct name **list); \
 		int (*push)(struct name *list, T item); \
 		int (*pop)(struct name *list, T item); \
 		T (*find)(struct name *list, T data); \
@@ -113,8 +113,9 @@ static inline void __do_nothing_list() {}
 		return ENODATA; \
 	} \
 	\
-	static void __list_free(name)(struct name *list) \
+	static void __list_free(name)(struct name **plist) \
 	{ \
+		struct name *list = *plist; \
 		list_node(list) *cursor = list->head; \
 		\
 		while (cursor) \
@@ -131,27 +132,17 @@ static inline void __do_nothing_list() {}
 		} \
 		\
 		free(list); \
-		list = NULL; \
+		*plist = NULL; \
 	} \
 	\
 	static void __list_purge(name)(struct name *list) \
 	{ \
-		if (list->head) { \
-			list_node(list) *cursor = list->head; \
-			\
-			while (cursor) \
-			{ \
-				list_node(list) *tmp = cursor->next; \
-				if (list->item_destructor) \
-					list->item_destructor(cursor->data); \
-				else \
-					free(cursor->data); \
-				free(cursor); \
-				\
-				cursor = tmp; \
-			} \
-			list->head = NULL; \
-		} \
+		list_data(list) *cursor = NULL; \
+		\
+		list_for_each(list, cursor) \
+			list_pop(list, cursor); \
+		\
+		list->head = NULL; \
 	} \
 	\
 	static struct name *__list_new(name)(void) \
