@@ -7,7 +7,7 @@
 #include <errno.h>
 
 /*
- * linked list to contain dynamically allocated objects
+ * linked list contains dynamically allocated objects
  */
 
 #define __list_push(name)      __list_## name ##_push
