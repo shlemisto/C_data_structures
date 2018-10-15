@@ -68,10 +68,8 @@ static inline void __do_nothing_array() {}
 	{ \
 		struct name *arr = *parr; \
 		\
-		if (arr->item_destructor) { \
-			for (int i = 0; i < array_len(arr); ++i) \
-				arr->item_destructor(array_at(arr, i)); \
-		} \
+		array_purge(arr); \
+		\
 		free(arr->data); \
 		free(arr); \
 		*parr = NULL; \
@@ -260,10 +258,7 @@ static inline void __do_nothing_array() {}
 	{ \
 		struct name *arr = *parr; \
 		\
-		if (arr->item_destructor_p) { \
-			for (int i = 0 ; i < array_len(arr); ++i) \
-			arr->item_destructor_p(parray_at(arr, i)); \
-		}\
+		parray_purge(arr); \
 		\
 		free(arr->data); \
 		free(arr); \

@@ -113,9 +113,8 @@ static inline void __do_nothing_list() {}
 		return ENODATA; \
 	} \
 	\
-	static void __list_free(name)(struct name **plist) \
+	static void __list_purge(name)(struct name *list) \
 	{ \
-		struct name *list = *plist; \
 		list_node(list) *cursor = list->head; \
 		\
 		while (cursor) \
@@ -131,18 +130,17 @@ static inline void __do_nothing_list() {}
 			cursor = tmp; \
 		} \
 		\
-		free(list); \
-		*plist = NULL; \
+		list->head = NULL; \
 	} \
 	\
-	static void __list_purge(name)(struct name *list) \
+	static void __list_free(name)(struct name **plist) \
 	{ \
-		list_data(list) *cursor = NULL; \
+		struct name *list = *plist; \
 		\
-		list_for_each(list, cursor) \
-			list_pop(list, cursor); \
+		list_purge(list); \
 		\
-		list->head = NULL; \
+		free(list); \
+		*plist = NULL; \
 	} \
 	\
 	static struct name *__list_new(name)(void) \

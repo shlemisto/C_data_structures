@@ -139,7 +139,7 @@ int main(void)
 		data_t *val = map_new_val(map);
 		sprintf(s, "string %d", rand() % 25);
 		if (map_push(map2, s, val))
-			map_destroy_item(map, val);
+			map_destroy_item(map2, val);
 	}
 
 	if (array_pop_by_ind(s_arr, -1))

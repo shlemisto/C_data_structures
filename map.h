@@ -153,9 +153,8 @@ static inline void __do_nothing_map() {}
 		return ENODATA; \
 	} \
 	\
-	static void __map_free(name)(struct name **pmap) \
+	static void __map_purge(name)(struct name *map) \
 	{ \
-		struct name *map = *pmap; \
 		list_node(map->list) *curr = map->list->head; \
 		\
 		while (curr) \
@@ -174,19 +173,18 @@ static inline void __do_nothing_map() {}
 			curr = tmp; \
 		} \
 		\
+		map->list->head = NULL; \
+	} \
+	\
+	static void __map_free(name)(struct name **pmap) \
+	{ \
+		struct name *map = *pmap; \
+		\
+		map_purge(map); \
+		\
 		free(map->list); \
 		free(map); \
 		*pmap = NULL; \
-	} \
-	\
-	static void __map_purge(name)(struct name *map) \
-	{ \
-		map_key_val(map) *kv = NULL; \
-		\
-		map_for_each(map, kv) \
-			map_pop(map, map_key(kv)); \
-		\
-		map->list->head = NULL; \
 	} \
 	\
 	static struct name *__map_new(name)(void) \
