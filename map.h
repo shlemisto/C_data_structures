@@ -8,7 +8,7 @@
 #include "list.h"
 
 /*
- * map to contain dynamically allocated objects which ones can be found by key
+ * map contains dynamically allocated objects which ones can be found by key
  */
 
 #define __map_push(name)      __map_## name ##_push
