@@ -227,7 +227,6 @@ static inline void __do_nothing_array() {}
 #define parray_destroy_item(arr, item) arr->item_destructor_p ? arr->item_destructor_p(item) : __do_nothing_array()
 #define parray_set_comparator(arr, c) arr->comparator_p = c
 #define parray_push(arr, item) arr->push_p(arr, item)
-#define parray_push_array(arr, from, len) arr->push_array(arr, from, len)
 #define parray_pop_by_ind(arr, pos) arr->pop_by_ind(arr, pos)
 #define parray_pop(arr, addr) arr->pop_p(arr, addr)
 #define parray_at(arr, i) arr->at_p(arr, i)
@@ -344,7 +343,6 @@ static inline void __do_nothing_array() {}
 			return NULL; \
 		} \
 		\
-		arr->push_array = __array_push_array(name); \
 		arr->push_p = __parray_push(name); \
 		arr->pop_p = __parray_pop(name); \
 		arr->pop_by_ind = __parray_pop_by_ind(name); \
