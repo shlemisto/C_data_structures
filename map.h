@@ -40,7 +40,7 @@ static inline void __do_nothing_map() {}
 #define map_purge(map) map->purge(map)
 #define map_free(map) ({ if (map) map->free(&map); })
 #define map_new_val(map) map->item_constructor ? map->item_constructor() : NULL
-#define map_destroy_item(map, val) map->item_destructor ? map->item_destructor(val) : __do_nothing_map()
+#define map_destroy_item(map, val) map->item_destructor ? map->item_destructor(val) : free(val)
 #define map_for_each(map, iter) \
 	for (list_node(map->list) *__node = map->list->head; __node && (iter = __node->data, 1); __node = __node->next)
 
@@ -140,10 +140,7 @@ static inline void __do_nothing_map() {}
 				else \
 					prev->next = curr->next; \
 				\
-				if (map->item_destructor) \
-					map->item_destructor(curr->data->val); \
-				else \
-					free(curr->data->val); \
+                                map_destroy_item(map, curr->data->val); \
 				\
 				__STATIC_IF(__key_is_string(curr->data->key), __free_if_string_##name, __do_nothing_map, curr->data->key); \
 				free(curr->data); \
@@ -164,10 +161,7 @@ static inline void __do_nothing_map() {}
 		{ \
 			list_node(map->list) *tmp = curr->next; \
 			\
-			if (map->item_destructor) \
-				map->item_destructor(curr->data->val); \
-			else \
-				free(curr->data->val); \
+                        map_destroy_item(map, curr->data->val); \
 			\
 			__STATIC_IF(__key_is_string(curr->data->key), __free_if_string_##name, __do_nothing_map, curr->data->key); \
 			free(curr->data); \
