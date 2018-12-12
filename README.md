@@ -1,6 +1,4 @@
-# C data structures
-
-Simple implementation of array, list and map in C.
+# A template-like implementation of array, list and map written in C
 
 See code example in example.c
 
