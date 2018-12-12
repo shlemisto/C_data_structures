@@ -102,6 +102,9 @@ static inline void __do_nothing_map() {}
 		if (__map_find(name)(map, key)) \
 			return EEXIST; \
 		\
+		if (!val) \
+			return ENOMEM; \
+		\
 		tmp = (__map_key_val(name) *) calloc(1, sizeof(__map_key_val(name))); \
 		if (!tmp) \
 			return ENOMEM; \
