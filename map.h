@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <errno.h>
 #include "list.h"
 
@@ -13,6 +14,7 @@
 
 #define __map_push(name)      __map_## name ##_push
 #define __map_find(name)      __map_## name ##_find
+#define __map_find_fmt(name)  __map_## name ##_find_fmt
 #define __map_pop(name)       __map_## name ##_pop
 #define __map_new(name)       __map_## name ##_new
 #define __map_free(name)      __map_## name ##_free
@@ -35,6 +37,7 @@ static inline void __do_nothing_map() {}
 #define map_push(map, key, val) map->push(map, key, val)
 #define map_pop(map, key) map->pop(map, key)
 #define map_find(map, what) map->find(map, what)
+#define map_find_fmt(map, ...) map->find_fmt(map, __VA_ARGS__)
 #define map_is_empty(map) (list_is_empty(map->list))
 #define map_set_comparator(map, c) map->comparator = c
 #define map_purge(map) map->purge(map)
@@ -77,6 +80,7 @@ static inline void __do_nothing_map() {}
 		int (*push)(struct name *map, T_key key, T_val val); \
 		int (*pop)(struct name *map, T_key key); \
 		T_val (*find)(struct name *map, T_key key); \
+		T_val (*find_fmt)(struct name *map, char *fmt, ...); \
 		int (*comparator)(T_key key1, T_key key2); \
 		void (*item_destructor)(T_val val); \
 		T_val (*item_constructor)(); \
@@ -93,6 +97,19 @@ static inline void __do_nothing_map() {}
 		} \
 		\
 		return NULL; \
+	} \
+	\
+	static T_val __map_find_fmt(name)(struct name *map, char *fmt, ...) \
+	{ \
+		va_list args; \
+		char key[1024] = { 0 }; \
+		int ret = 0; \
+		\
+		va_start(args, fmt); \
+			ret = vsnprintf(key, sizeof(key), fmt, args); \
+		va_end(args); \
+		\
+		return (ret < 0 || ret >= sizeof(key)) ? NULL : map->find(map, key); \
 	} \
 	\
 	static int __map_push(name)(struct name *map, T_key key, T_val val) \
@@ -199,6 +216,7 @@ static inline void __do_nothing_map() {}
 		map->push = __map_push(name); \
 		map->pop = __map_pop(name); \
 		map->find = __map_find(name); \
+		map->find_fmt = __map_find_fmt(name); \
 		map->free = __map_free(name); \
 		map->purge = __map_purge(name); \
 		\
