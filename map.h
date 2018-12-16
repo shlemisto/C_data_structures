@@ -46,6 +46,13 @@ static inline void __do_nothing_map() {}
 #define map_destroy_item(map, val) map->item_destructor ? map->item_destructor(val) : free(val)
 #define map_for_each(map, iter) \
 	for (list_node(map->list) *__node = map->list->head; __node && (iter = __node->data, 1); __node = __node->next)
+#define map_len(map) ({ \
+	size_t len = 0; \
+	map_key_val(map) *kv; \
+	map_for_each(map, kv) \
+		++len; \
+	len; \
+})
 
 #define map_generator(T_key, T_val, name, __constructor, __destructor, __comparator) \
 	\
