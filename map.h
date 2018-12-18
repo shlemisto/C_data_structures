@@ -53,7 +53,6 @@ static inline void __do_nothing_map() {}
 		++len; \
 	len; \
 })
-#define map_is_empty(map) (0 == map_len(map))
 
 #define map_generator(T_key, T_val, name, __constructor, __destructor, __comparator) \
 	\
