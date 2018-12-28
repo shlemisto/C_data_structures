@@ -24,15 +24,26 @@ static inline void __do_nothing_list() {}
 
 #define list_push(list, item) list->push(list, item)
 #define list_pop(list, item) list->pop(list, item)
+#define list_pop_safely(list, iter /* stub */) ({ \
+	if (!__prev_node) \
+		list->head = __curr_node->next; \
+	else \
+		__prev_node->next = __curr_node->next; \
+	\
+	list_destroy_item(list, __curr_node->data); \
+	free(__curr_node); \
+})
 #define list_find(list, what) list->find(list, what)
 #define list_new(name) __list_new(name)()
 #define list_is_empty(list) (list->head == NULL)
 #define list_purge(list) list->purge(list)
 #define list_free(list) ({ if (list) list->free(&list); })
 #define list_new_item(list) list->item_constructor ? list->item_constructor() : NULL
-#define list_destroy_item(list, item) list->item_destructor ? list->item_destructor(item) : __do_nothing_list()
+#define list_destroy_item(list, item) list->item_destructor ? list->item_destructor(item) : free(item)
 #define list_for_each(list, iter) \
 	for (list_node(list) *__node = list->head; __node && (iter = __node->data, 1); __node = __node->next)
+#define list_for_each_safe(list, iter) \
+	for (list_node(list) *__curr_node = list->head, *__prev_node = NULL; __curr_node && (iter = __curr_node->data, 1); __prev_node = __curr_node, __curr_node = __curr_node->next)
 
 #define list_generator(T, name, __constructor, __destructor, __comparator) \
 	struct list_node_##name { \
@@ -55,16 +66,15 @@ static inline void __do_nothing_list() {}
 	\
 	static T __list_find(name)(struct name *list, T what) \
 	{ \
-		list_node(list) *iter = list->head; \
+		list_data(list) *iter; \
 		\
 		if (!list->head || !list->comparator) \
 			return NULL; \
 		\
-		while (iter) \
+		list_for_each(list, iter) \
 		{ \
-			if (0 == list->comparator(iter->data, what)) \
-				return iter->data; \
-			iter = iter->next; \
+			if (0 == list->comparator(iter, what)) \
+				return iter; \
 		} \
 		\
 		return NULL; \
@@ -72,8 +82,9 @@ static inline void __do_nothing_list() {}
 	\
 	static int __list_push(name)(struct name *list, T item) \
 	{ \
-		list_node(list) *temp = (list_node(list) *) calloc(1, sizeof(list_node(list))); \
-		if (!temp) \
+		list_node(list) *temp = NULL; \
+		\
+		if (NULL == (temp = calloc(1, sizeof(list_node(list))))) \
 			return ENOMEM; \
 		\
 		temp->data = item; \
@@ -86,26 +97,16 @@ static inline void __do_nothing_list() {}
 	\
 	static int __list_pop(name)(struct name *list, T val) \
 	{ \
-		list_node(list) *curr = NULL; \
-		list_node(list) *prev = NULL; \
+		list_data(list) *iter = NULL; \
 		\
 		if (!list->comparator) \
 			return EPERM; \
 		\
-		for (curr = list->head; curr; prev = curr, curr = curr->next) { \
-			if (0 == list->comparator(curr->data, val)) { \
-				if (!prev) \
-					list->head = curr->next; \
-				else \
-					prev->next = curr->next; \
-				\
-				if (list->item_destructor) \
-					list->item_destructor(curr->data); \
-				else \
-					free(curr->data); \
-				\
-				free(curr); \
-				\
+		list_for_each_safe(list, iter) \
+		{ \
+			if (0 == list->comparator(iter, val))\
+			{ \
+				list_pop_safely(list, iter); \
 				return 0; \
 			} \
 		} \
@@ -115,20 +116,10 @@ static inline void __do_nothing_list() {}
 	\
 	static void __list_purge(name)(struct name *list) \
 	{ \
-		list_node(list) *cursor = list->head; \
+		list_data(list) *iter = NULL; \
 		\
-		while (cursor) \
-		{ \
-			list_node(list) *tmp = cursor->next; \
-			\
-			if (list->item_destructor) \
-				list->item_destructor(cursor->data); \
-			else \
-				free(cursor->data); \
-			free(cursor); \
-			\
-			cursor = tmp; \
-		} \
+		list_for_each_safe(list, iter) \
+			list_pop_safely(list, iter); \
 		\
 		list->head = NULL; \
 	} \
@@ -145,11 +136,10 @@ static inline void __do_nothing_list() {}
 	\
 	static struct name *__list_new(name)(void) \
 	{ \
-		struct name *list = (struct name *) calloc(1, sizeof(struct name)); \
-		if (!list) \
-			return NULL; \
+		struct name *list = NULL; \
 		\
-		list->head = NULL; \
+		if (NULL == (list = calloc(1, sizeof(struct name)))) \
+			return NULL; \
 		\
 		list->push = __list_push(name); \
 		list->pop = __list_pop(name); \
