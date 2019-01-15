@@ -21,7 +21,7 @@
 #define __map_purge(name)      __map_## name ##_purge
 
 #define __map_key_val(name) struct __map_key_val_##name
-#define map_key_val(map) __typeof(*map->list->head->data)
+#define map_iter(map) __typeof(*map->list->head->data)
 #define map_key(iter) iter->key
 #define map_val(iter) iter->val
 
@@ -70,8 +70,8 @@ static inline void __free_if_string(char *key) { free(key); }
 
 #define map_len(map) ({ \
 	size_t len = 0; \
-	map_key_val(map) *kv; \
-	map_for_each(map, kv) \
+	map_iter(map) *iter; \
+	map_for_each(map, iter) \
 		++len; \
 	len; \
 })
@@ -171,16 +171,16 @@ static inline void __free_if_string(char *key) { free(key); }
 	static int __map_pop(name)(struct name *map, T_key key) \
 	{ \
 		int ret = 0; \
-		map_key_val(map) *kv; \
+		map_iter(map) *iter; \
 		\
 		if (!map->comparator) \
 			return EPERM; \
 		\
-		map_for_each_safe(map, kv) \
+		map_for_each_safe(map, iter) \
 		{ \
-			if (0 == map->comparator(map_key(kv), key))\
+			if (0 == map->comparator(map_key(iter), key))\
 			{ \
-				map_pop_safely(map, kv); \
+				map_pop_safely(map, iter); \
 				return 0; \
 			} \
 		} \
@@ -190,10 +190,10 @@ static inline void __free_if_string(char *key) { free(key); }
 	\
 	static void __map_purge(name)(struct name *map) \
 	{ \
-		map_key_val(map) *kv; \
+		map_iter(map) *iter; \
 		\
-		map_for_each_safe(map, kv) \
-			map_pop_safely(map, kv); \
+		map_for_each_safe(map, iter) \
+			map_pop_safely(map, iter); \
 		map->list->head = NULL; \
 	} \
 	\
