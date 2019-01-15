@@ -61,7 +61,7 @@ static inline void __free_if_string(char *key) { free(key); }
 #define map_set_comparator(map, c) map->comparator = c
 #define map_purge(map) map->purge(map)
 #define map_free(map) ({ if (map) map->free(&map); })
-#define map_new_val(map) map->item_constructor ? map->item_constructor() : NULL
+#define map_new_val(map, ...) map->item_constructor ? map->item_constructor(__VA_ARGS__) : NULL
 #define map_destroy_item(map, val) map->item_destructor ? map->item_destructor(val) : free(val)
 #define map_for_each(map, iter) \
 	for (list_node(map->list) *__node = map->list->head; __node && (iter = __node->data, 1); __node = __node->next)
