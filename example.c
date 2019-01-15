@@ -67,7 +67,7 @@ data_t *data_constructor()
 	return p;
 }
 
-array_generator(data_t, s_data_array, s_data_destructor, data_comparator)
+array_generator(data_t, s_data_array, NULL, s_data_destructor, NULL)
 parray_generator(data_t *, data_array, data_constructor, data_destructor, data_comparator)
 list_generator(data_t *, data_list, data_constructor, data_destructor, data_comparator)
 map_generator(data_key_t, data_t *, data_map, data_constructor, data_destructor, key_comparator)
