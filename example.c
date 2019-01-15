@@ -82,8 +82,8 @@ int main(void)
 	data_map_t *map = NULL;
 	data_map2_t *map2 = NULL;
 	data_t *data = NULL;
-	map_key_val(map) *kv = NULL;
-	map_key_val(map2) *kv2;
+	map_iter(map) *kv = NULL;
+	map_iter(map2) *kv2;
 	data_t *find_in_map = NULL;
 
 	srand(time(NULL));
