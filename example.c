@@ -108,38 +108,38 @@ int main(void)
 		if (d.str) {
 			sprintf(d.str, "%d", d.a);
 			if (array_push(s_arr, &d))
-				array_destroy_item(s_arr, &d);
+				array_val_free(s_arr, &d);
 		}
 	}
 
 	for (int i = 0; i < 50; ++i) {
-		data_t *item = parray_new_val(arr);
+		data_t *item = parray_val_new(arr);
 		if (parray_push(arr, item))
-			parray_destroy_item(arr, item);
+			parray_val_free(arr, item);
 	}
 
 	for (int i = 0; i < 50; ++i) {
-		data_t *item = list_new_val(list);
+		data_t *item = list_val_new(list);
 		if (list_push(list, item))
-			list_destroy_item(list, item);
+			list_val_free(list, item);
 	}
 
 	for (int i = 0; i < 50; ++i) {
 		data_key_t key = { 0 };
-		data_t *val = map_new_val(map);
+		data_t *val = map_val_new(map);
 		if (val) {
 			sprintf(key.key, "data_key_t %d", rand() % 20);
 			if (map_push(map, key, val))
-				map_destroy_item(map, val);
+				map_val_free(map, val);
 		}
 	}
 
 	for (int i = 0; i < 50; ++i) {
 		char s[100] = { 0 };
-		data_t *val = map_new_val(map);
+		data_t *val = map_val_new(map);
 		sprintf(s, "string %d", rand() % 25);
 		if (map_push(map2, s, val))
-			map_destroy_item(map2, val);
+			map_val_free(map2, val);
 	}
 
 	if (array_pop_by_ind(s_arr, -1))

@@ -50,9 +50,9 @@ static inline void __free_if_string(char *key) { free(key); }
 	else \
 		__prev_node->next = __curr_node->next; \
 	\
-	map_destroy_item(map, __curr_node->data->val); \
+	map_val_free(map, __curr_node->data->val); \
 	__STATIC_IF(__key_is_string(__curr_node->data->key), __free_if_string, __do_nothing_map, __curr_node->data->key); \
-	list_destroy_item(map->list, __curr_node->data); \
+	list_val_free(map->list, __curr_node->data); \
 	free(__curr_node); \
 })
 #define map_find(map, what) map->find(map, what)
@@ -61,8 +61,8 @@ static inline void __free_if_string(char *key) { free(key); }
 #define map_set_comparator(map, c) map->comparator = c
 #define map_purge(map) map->purge(map)
 #define map_free(map) ({ if (map) map->free(&map); })
-#define map_new_val(map, ...) map->item_constructor ? map->item_constructor(__VA_ARGS__) : NULL
-#define map_destroy_item(map, val) map->item_destructor ? map->item_destructor(val) : free(val)
+#define map_val_new(map, ...) map->item_constructor ? map->item_constructor(__VA_ARGS__) : NULL
+#define map_val_free(map, val) map->item_destructor ? map->item_destructor(val) : free(val)
 #define map_for_each(map, iter) \
 	for (list_node(map->list) *__node = map->list->head; __node && (iter = __node->data, 1); __node = __node->next)
 #define map_for_each_safe(map, iter) \

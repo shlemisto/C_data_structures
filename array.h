@@ -27,7 +27,8 @@ static inline void __do_nothing_array() {}
 #define __array_free(name)	 __arr_## name ##_free
 
 #define array_new(name) __array_new(name)()
-#define array_destroy_item(arr, item) arr->item_destructor ? arr->item_destructor(item) : __do_nothing_array()
+#define array_val_new(arr, ...) arr->item_constructor ? arr->item_constructor(__VA_ARGS__) : NULL
+#define array_val_free(arr, item) arr->item_destructor ? arr->item_destructor(item) : __do_nothing_array()
 #define array_len(arr) arr->len
 #define array_data(arr) arr->data
 #define array_is_empty(arr) (arr->len == 0)
@@ -224,7 +225,7 @@ static inline void __do_nothing_array() {}
 #define parray_data(arr) arr->data
 #define parray_is_empty(arr) (arr->len == 0)
 #define parray_set_item_destructor(arr, d) arr->item_destructor_p = d
-#define parray_destroy_item(arr, item) arr->item_destructor_p ? arr->item_destructor_p(item) : __do_nothing_array()
+#define parray_val_free(arr, item) arr->item_destructor_p ? arr->item_destructor_p(item) : __do_nothing_array()
 #define parray_push(arr, item) arr->push_p(arr, item)
 #define parray_pop_by_ind(arr, pos) arr->pop_by_ind(arr, pos)
 #define parray_pop(arr, addr) arr->pop_p(arr, addr)
@@ -234,7 +235,7 @@ static inline void __do_nothing_array() {}
 #define parray_for_each(arr, iter) __parray_for_each(arr, iter, 0)
 #define parray_find_from(arr, what, pos) arr->find_p(arr, what, pos)
 #define parray_find(arr, what) parray_find_from(arr, what, 0)
-#define parray_new_val(arr, ...) arr->item_constructor_p ? arr->item_constructor_p(__VA_ARGS__) : NULL
+#define parray_val_new(arr, ...) arr->item_constructor_p ? arr->item_constructor_p(__VA_ARGS__) : NULL
 
 #define parray_purge(arr) arr->purge(arr)
 #define parray_free(arr) ({ if (arr) arr->free(&arr); })

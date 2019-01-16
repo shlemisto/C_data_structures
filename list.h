@@ -30,7 +30,7 @@ static inline void __do_nothing_list() {}
 	else \
 		__prev_node->next = __curr_node->next; \
 	\
-	list_destroy_item(list, __curr_node->data); \
+	list_val_free(list, __curr_node->data); \
 	free(__curr_node); \
 })
 #define list_find(list, what) list->find(list, what)
@@ -38,8 +38,8 @@ static inline void __do_nothing_list() {}
 #define list_is_empty(list) (list->head == NULL)
 #define list_purge(list) list->purge(list)
 #define list_free(list) ({ if (list) list->free(&list); })
-#define list_new_val(list, ...) list->item_constructor ? list->item_constructor(__VA_ARGS__) : NULL
-#define list_destroy_item(list, item) list->item_destructor ? list->item_destructor(item) : free(item)
+#define list_val_new(list, ...) list->item_constructor ? list->item_constructor(__VA_ARGS__) : NULL
+#define list_val_free(list, item) list->item_destructor ? list->item_destructor(item) : free(item)
 #define list_for_each(list, iter) \
 	for (list_node(list) *__node = list->head; __node && (iter = __node->data, 1); __node = __node->next)
 #define list_for_each_safe(list, iter) \
