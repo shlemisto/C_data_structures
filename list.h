@@ -38,7 +38,7 @@ static inline void __do_nothing_list() {}
 #define list_is_empty(list) (list->head == NULL)
 #define list_purge(list) list->purge(list)
 #define list_free(list) ({ if (list) list->free(&list); })
-#define list_new_item(list) list->item_constructor ? list->item_constructor() : NULL
+#define list_new_val(list, ...) list->item_constructor ? list->item_constructor(__VA_ARGS__) : NULL
 #define list_destroy_item(list, item) list->item_destructor ? list->item_destructor(item) : free(item)
 #define list_for_each(list, iter) \
 	for (list_node(list) *__node = list->head; __node && (iter = __node->data, 1); __node = __node->next)

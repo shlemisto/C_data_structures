@@ -234,7 +234,7 @@ static inline void __do_nothing_array() {}
 #define parray_for_each(arr, iter) __parray_for_each(arr, iter, 0)
 #define parray_find_from(arr, what, pos) arr->find_p(arr, what, pos)
 #define parray_find(arr, what) parray_find_from(arr, what, 0)
-#define parray_new_item(arr) arr->item_constructor_p ? arr->item_constructor_p() : NULL
+#define parray_new_val(arr, ...) arr->item_constructor_p ? arr->item_constructor_p(__VA_ARGS__) : NULL
 
 #define parray_purge(arr) arr->purge(arr)
 #define parray_free(arr) ({ if (arr) arr->free(&arr); })
