@@ -113,13 +113,13 @@ int main(void)
 	}
 
 	for (int i = 0; i < 50; ++i) {
-		data_t *item = parray_new_item(arr);
+		data_t *item = parray_new_val(arr);
 		if (parray_push(arr, item))
 			parray_destroy_item(arr, item);
 	}
 
 	for (int i = 0; i < 50; ++i) {
-		data_t *item = list_new_item(list);
+		data_t *item = list_new_val(list);
 		if (list_push(list, item))
 			list_destroy_item(list, item);
 	}
