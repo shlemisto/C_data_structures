@@ -33,6 +33,11 @@ int string_comp(char *k1, char *k2)
 	return strcmp(k1, k2);
 }
 
+int int_comp(int *a, int *b)
+{
+    return *a - *b;
+}
+
 void data_destructor(data_t *d)
 {
 	if (!d)
@@ -42,161 +47,113 @@ void data_destructor(data_t *d)
 	free(d);
 }
 
-void s_data_destructor(data_t *d)
-{
-	if (!d)
-		return;
-
-	free(d->str);
-}
-
-data_t *data_constructor()
+data_t *data_constructor(int a)
 {
 	data_t *p = calloc(1, sizeof(data_t));
 
-	if (!p)
+    if (NULL == p)
 		return NULL;
-	else if (!(p->str = malloc(32))) {
+    else if (NULL == (p->str = calloc(1, 256*sizeof(char))))
+    {
 		free(p);
 		return NULL;
 	}
 
-	p->a = rand() % 50;
-	sprintf(p->str, "sq %d", p->a * p->a);
+    p->a = a;
+    sprintf(p->str, "int as string %d", p->a);
 
 	return p;
 }
 
-array_generator(data_t, s_data_array, NULL, s_data_destructor, NULL)
-parray_generator(data_t *, data_array, data_constructor, data_destructor, data_comparator)
-list_generator(data_t *, data_list, data_constructor, data_destructor, data_comparator)
-map_generator(data_key_t, data_t *, data_map, data_constructor, data_destructor, key_comparator)
-map_generator(char *, data_t *, data_map2, data_constructor, data_destructor, string_comp)
+array_generator(int, int_arr, NULL, NULL, int_comp)
+parray_generator(data_t *, data_arr, data_constructor, data_destructor, NULL)
+map_generator(char *, data_t *, data_map, data_constructor, data_destructor, string_comp)
 
 int main(void)
 {
-	int rv = 0;
-	data_array_t *arr = NULL;
-	s_data_array_t *s_arr = NULL;
-	data_list_t *list = NULL;
-	data_map_t *map = NULL;
-	data_map2_t *map2 = NULL;
-	data_t *data = NULL;
-	map_iter(map) *kv = NULL;
-	map_iter(map2) *kv2;
-	data_t *find_in_map = NULL;
+    int sts = ERR_OK;
+    data_map_t *map = NULL;
+    data_arr_t *arr = NULL;
+    int_arr_t *iarr = NULL;
+    data_t *d = NULL;
+    map_iter(map) *iter;
 
-	srand(time(NULL));
+    srand(time(0));
 
-	s_arr = array_new(s_data_array);
-	arr = parray_new(data_array);
-	list = list_new(data_list);
-	map = map_new(data_map);
-	map2 = map_new(data_map2);
+    if (NULL == (map = map_new(data_map)) ||
+        NULL == (arr = parray_new(data_arr)) ||
+        NULL == (iarr = array_new(int_arr)))
+    {
+        sts = ERR_NO_MEM;
+        goto exit;
+    }
 
-	if (!s_arr || !arr || !list || !map || !map2) {
-		printf("no memory\n");
-		rv = ENOMEM;
-		goto exit;
-	}
+    for (int i = 0; i < 10; ++i)
+    {
+        int err = ERR_OK;
+        data_t *item = NULL;
+        char key[32] = { 0 };
 
-	for (int i = 0; i < 50; ++i) {
-		data_t d;
+        sprintf(key, "%d", rand() % 100);
+        item = map_val_new(map, i);
 
-		d.a = 50-i;
-		d.str = calloc(1, 10);
-		if (d.str) {
-			sprintf(d.str, "%d", d.a);
-			if (array_push(s_arr, &d))
-				array_val_free(s_arr, &d);
-		}
-	}
+        if (ERR_OK != (err = map_push(map, key, item)))
+            map_val_free(map, item);
 
-	for (int i = 0; i < 50; ++i) {
-		data_t *item = parray_val_new(arr);
-		if (parray_push(arr, item))
-			parray_val_free(arr, item);
-	}
+        item = parray_val_new(arr, i*i);
+        if (ERR_OK != (err = parray_push(arr, item)))
+            parray_val_free(arr, item);
 
-	for (int i = 0; i < 50; ++i) {
-		data_t *item = list_val_new(list);
-		if (list_push(list, item))
-			list_val_free(list, item);
-	}
+        array_push(iarr, (&(int) { i*i*i }));
+    }
 
-	for (int i = 0; i < 50; ++i) {
-		data_key_t key = { 0 };
-		data_t *val = map_val_new(map);
-		if (val) {
-			sprintf(key.key, "data_key_t %d", rand() % 20);
-			if (map_push(map, key, val))
-				map_val_free(map, val);
-		}
-	}
+    printf("------ begin int array -------\n");
 
-	for (int i = 0; i < 50; ++i) {
-		char s[100] = { 0 };
-		data_t *val = map_val_new(map);
-		sprintf(s, "string %d", rand() % 25);
-		if (map_push(map2, s, val))
-			map_val_free(map2, val);
-	}
+    int i;
+    array_for_each_val(iarr, i)
+        printf("%d\n", i);
 
-	if (array_pop_by_ind(s_arr, -1))
-		printf("unable to pop the last elem from s_arr!\n");
+    {
+        int *pi = array_find(iarr, (&(int) { 54 }));
+        if (NULL == pi)
+            printf("54 is not found!\n");
+        pi = array_find(iarr, (&(int) { 512 }));
+        if (pi)
+            printf("512 is found!\n");
+    }
 
-	if (parray_pop_by_ind(arr, 0))
-		printf("unable to pop the first elem from arr!\n");
+    printf("------ end int array -------\n\n");
 
-	if (parray_pop(arr, &((data_t) { .a = 4 })))
-		printf("unable to pop '4' from arr; not found in arr\n");
+    printf("------ begin array -------\n");
 
-	if (list_pop(list, &((data_t) { .a = 11 })))
-		printf("unable to delete '11' from list; not found in list\n");
+    parray_for_each(arr, d)
+        printf("{ %d; %s }\n", d->a, d->str);
 
-	find_in_map = map_find(map, ((data_key_t) { .key = "data_key_t 10" }));
-	if (find_in_map) {
-		printf("found { data_key_t 10: [%d, %s] } delete it!\n", find_in_map->a, find_in_map->str);
-		map_pop(map, ((data_key_t) { .key = "data_key_t 10" }));
-	}
+    printf("------ end array -------\n\n");
 
-	find_in_map = map_find(map2, ((char *) "string 10"));
-	if (find_in_map) {
-		printf("found { string 10: [%d, %s] } delete it!\n", find_in_map->a, find_in_map->str);
-		map_pop(map2, ((char *) "string 10"));
-	}
+    printf("------ begin map -------\n\n");
 
-	printf("\n\ns_arr\n");
-	array_for_each(s_arr, data)
-		printf("[%d, %s], ", data->a, data->str);
-	printf("\n\n");
+    map_for_each(map, iter)
+        printf("%s: { %d; %s}\n", map_key(iter), map_val(iter)->a, map_val(iter)->str);
 
-	printf("arr\n");
-	parray_for_each(arr, data)
-		printf("[%d, %s], ", data->a, data->str);
-	printf("\n\n");
+    printf("\n------ delete some items from map -------\n");
 
-	printf("list\n");
-	list_for_each(list, data)
-		printf("[%d, %s], ", data->a, data->str);
-	printf("\n\n");
+    map_for_each_safe(map, node, iter)
+    {
+        if (atoi(map_key(iter)) % 2)
+            map_pop_safe(map, node);
+    }
 
-	printf("map\n");
-	map_for_each(map, kv)
-		printf("{%s: [%d, %s]}\n", map_key(kv).key, map_val(kv)->a, map_val(kv)->str);
-	printf("\n");
+    map_for_each(map, iter)
+        printf("%s: { %d; %s}\n", map_key(iter), map_val(iter)->a, map_val(iter)->str);
 
-	printf("map2\n");
-	map_for_each(map2, kv2)
-		printf("{%s: [%d, %s]}\n", map_key(kv2), map_val(kv2)->a, map_val(kv2)->str);
-	printf("\n");
+    printf("------ end map -------\n");
+
 
 exit:
-	array_free(s_arr);
-	parray_free(arr);
-	list_free(list);
-	map_free(map);
-	map_free(map2);
+    array_free(iarr);
+    parray_free(arr);
+    map_free(map);
 
-	return rv;
+    return sts;
 }

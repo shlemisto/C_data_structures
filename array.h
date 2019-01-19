@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <errno.h>
+#include "defs.h"
 
 // get index from iterator
 #define __aind(name) __i_ ## name
@@ -27,21 +28,21 @@ static inline void __do_nothing_array() {}
 #define __array_free(name)	 __arr_## name ##_free
 
 #define array_new(name) __array_new(name)()
-#define array_val_new(arr, ...) arr->item_constructor ? arr->item_constructor(__VA_ARGS__) : NULL
-#define array_val_free(arr, item) arr->item_destructor ? arr->item_destructor(item) : __do_nothing_array()
-#define array_len(arr) arr->len
-#define array_data(arr) arr->data
-#define array_is_empty(arr) (arr->len == 0)
-#define array_at(arr, i) arr->at(arr, i)
-#define array_at_val(arr, i) *arr->at(arr, i) // !!! be careful
-#define array_pop(arr, pos) arr->pop(arr, pos)
-#define array_pop_by_ind(arr, pos) arr->pop_by_ind(arr, pos)
-#define array_push(arr, item) arr->push(arr, item)
-#define array_push_array(arr, from, len) arr->push_array(arr, from, len)
-#define array_find_from(arr, what, pos) arr->find(arr, what, pos)
+#define array_val_new(arr, ...) (arr)->item_constructor ? (arr)->item_constructor(__VA_ARGS__) : NULL
+#define array_val_free(arr, item) (arr)->item_destructor ? (arr)->item_destructor(item) : __do_nothing_array()
+#define array_len(arr) (arr)->len
+#define array_data(arr) (arr)->data
+#define array_is_empty(arr) (0 == array_len(arr))
+#define array_at(arr, i) (arr)->at(arr, i)
+#define array_at_val(arr, i) *(arr)->at(arr, i) // !!! be careful
+#define array_pop(arr, pos) (arr)->pop(arr, pos)
+#define array_pop_by_ind(arr, pos) (arr)->pop_by_ind(arr, pos)
+#define array_push(arr, item) (arr)->push(arr, item)
+#define array_push_array(arr, from, len) (arr)->push_array(arr, from, len)
+#define array_find_from(arr, what, pos) (arr)->find(arr, what, pos)
 #define array_find(arr, what) array_find_from(arr, what, 0)
-#define array_free(arr) ({ if (arr) arr->free(&arr); })
-#define array_purge(arr) arr->purge(arr)
+#define array_free(arr) ({ if (arr) (arr)->free(&arr); })
+#define array_purge(arr) (arr)->purge(arr)
 
 // note: pos >= 0
 #define __array_for_each(arr, iter, pos) \
@@ -79,16 +80,17 @@ static inline void __do_nothing_array() {}
 	{ \
 		T *tmp_arr = NULL; \
 		\
-		if (!item) \
-			return EPERM; \
+        if (NULL == item) \
+            return ERR_INVALID_ARG; \
 		\
 		if (arr->capacity == arr->len) { \
 			arr->capacity *= 2; \
 			\
 			tmp_arr = (T *) realloc(arr->data, arr->capacity * sizeof(T)); \
-			if (!tmp_arr) { \
+            if (NULL == tmp_arr) \
+            { \
 				array_free(arr); \
-				return ENOMEM; \
+                return ERR_NO_MEM; \
 			} \
 			\
 			arr->data = tmp_arr; \
@@ -96,18 +98,19 @@ static inline void __do_nothing_array() {}
 		\
 		memcpy((void *) &arr->data[arr->len++], (void *) item, sizeof(T)); \
 		\
-		return 0; \
+        return ERR_OK; \
 	} \
 	\
 	static int __array_push_array(name)(struct name *arr, T *from, int len) \
 	{ \
-		int ret = 0; \
+        int ret = ERR_OK; \
 		\
-		if (!from) \
-			return EPERM; \
+        if (NULL == from) \
+            return ERR_INVALID_ARG; \
 		\
-		for (int i = 0 ; i < len; ++i) { \
-			if ((ret = __array_push(name)(arr, &from[i]))) \
+        for (int i = 0 ; i < len; ++i) \
+        { \
+            if (ERR_OK != (ret = __array_push(name)(arr, &from[i]))) \
 			    break; \
 		} \
 		return ret; \
@@ -126,9 +129,9 @@ static inline void __do_nothing_array() {}
 		T *addr = NULL; \
 		\
 		if (array_is_empty(arr)) \
-			return ENODATA; \
+            return ERR_EMPTY; \
 		else if ((pos >= array_len(arr)) || (pos < -array_len(arr))) \
-			return EPERM; \
+            return ERR_OUT_OF_BOUNDS; \
 		\
 		addr = __array_at(name)(arr, pos); \
 		/* case for len == 1, or for the last elem */ \
@@ -146,16 +149,18 @@ static inline void __do_nothing_array() {}
 		if (arr->item_destructor) \
 			arr->item_destructor(addr); \
 		\
-		return 0; \
+        return ERR_OK; \
 	} \
 	\
 	static int __array_pop(name)(struct name *arr, T *addr) \
 	{ \
-		int ret = ENODATA; \
+        int ret = ERR_NOT_FOUND; \
 		__typeof(arr->data) iter = NULL; \
 		\
-		if (!addr || !arr->comparator) \
-			return EPERM; \
+        if (NULL == addr) \
+            return ERR_INVALID_ARG; \
+        else if (NULL == arr->comparator) \
+            return ERR_NO_COMPARATOR; \
 		\
 		array_for_each(arr, iter) { \
 			if (0 == arr->comparator(iter, addr)) { \
@@ -167,14 +172,15 @@ static inline void __do_nothing_array() {}
 		return ret; \
 	} \
 	\
-	static T *__array_find(name)(struct name *arr, T *what, int pos) \
+    static T *__array_find(name)(struct name *arr, T *what, int pos) \
 	{ \
 		T *iter = NULL; \
 		\
-		if (!what || !arr->comparator) \
+        if (NULL == what || NULL == arr->comparator) \
 			return NULL; \
 		\
-		__array_for_each(arr, iter, pos) { \
+        __array_for_each(arr, iter, pos) \
+        { \
 			if (0 == arr->comparator(iter, what)) \
 				return iter; \
 		} \
@@ -185,12 +191,16 @@ static inline void __do_nothing_array() {}
 	static struct name *__array_new(name)(void) \
 	{ \
 		struct name *arr = (struct name *) calloc(1, sizeof(struct name)); \
-		if (!arr) \
+        \
+        if (NULL == arr) \
 			return NULL; \
+        \
 		arr->len = 0; \
 		arr->capacity = 10; \
 		arr->data = (T *) calloc(arr->capacity, sizeof(T)); \
-		if (!arr->data) { \
+        \
+        if (NULL == arr->data) \
+        { \
 			free(arr); \
 			return NULL; \
 		} \
@@ -221,33 +231,34 @@ static inline void __do_nothing_array() {}
 #define __parray_purge(name)	  __parr_## name ##_purge
 
 #define parray_new(name) __parray_new(name)()
-#define parray_len(arr) arr->len
-#define parray_data(arr) arr->data
-#define parray_is_empty(arr) (arr->len == 0)
-#define parray_set_item_destructor(arr, d) arr->item_destructor_p = d
-#define parray_val_free(arr, item) arr->item_destructor_p ? arr->item_destructor_p(item) : __do_nothing_array()
-#define parray_push(arr, item) arr->push_p(arr, item)
-#define parray_pop_by_ind(arr, pos) arr->pop_by_ind(arr, pos)
-#define parray_pop(arr, addr) arr->pop_p(arr, addr)
-#define parray_at(arr, i) arr->at_p(arr, i)
+#define parray_len(arr) array_len(arr)
+#define parray_data(arr) array_data(arr)
+#define parray_is_empty(arr) array_is_empty(arr)
+#define parray_val_free(arr, item) (arr)->item_destructor_p ? (arr)->item_destructor_p(item) : __do_nothing_array()
+#define parray_val_new(arr, ...) (arr)->item_constructor_p ? (arr)->item_constructor_p(__VA_ARGS__) : NULL
+#define parray_push(arr, item) (arr)->push_p(arr, item)
+#define parray_pop_by_ind(arr, pos) (arr)->pop_by_ind(arr, pos)
+#define parray_pop(arr, addr) (arr)->pop_p(arr, addr)
+#define parray_at(arr, i) (arr)->at_p(arr, i)
+
 #define __parray_for_each(arr, iter, pos) \
 	for (int __aind(iter) = (pos); ((pos) >= 0) && (__aind(iter) < array_len(arr)) && (iter = parray_at(arr, __aind(iter)), 1); ++__aind(iter))
 #define parray_for_each(arr, iter) __parray_for_each(arr, iter, 0)
-#define parray_find_from(arr, what, pos) arr->find_p(arr, what, pos)
+#define parray_find_from(arr, what, pos) (arr)->find_p(arr, what, pos)
 #define parray_find(arr, what) parray_find_from(arr, what, 0)
-#define parray_val_new(arr, ...) arr->item_constructor_p ? arr->item_constructor_p(__VA_ARGS__) : NULL
 
-#define parray_purge(arr) arr->purge(arr)
-#define parray_free(arr) ({ if (arr) arr->free(&arr); })
+#define parray_purge(arr) (arr)->purge(arr)
+#define parray_free(arr) ({ if (arr) (arr)->free(&(arr)); })
 
 #define parray_generator(T, name, __constructor, __destructor, __comparator) \
 	array_generator(T, name, NULL, NULL, NULL) \
 	\
 	static void __parray_purge(name)(struct name *arr) \
 	{ \
-		if (arr->item_destructor_p) { \
+        if (arr->item_destructor_p) \
+        { \
 			for (int i = 0 ; i < array_len(arr); ++i) \
-			arr->item_destructor_p(parray_at(arr, i)); \
+                arr->item_destructor_p(parray_at(arr, i)); \
 		} \
 		arr->len = 0; \
 		arr->capacity = 10; \
@@ -266,8 +277,8 @@ static inline void __do_nothing_array() {}
 	\
 	static int __parray_push(name)(struct name *arr, T item) \
 	{ \
-		if (!item) \
-			return EPERM; \
+        if (NULL == item) \
+            return ERR_INVALID_ARG; \
 		\
 		return __array_push(name)(arr, &item); \
 	} \
@@ -276,7 +287,7 @@ static inline void __do_nothing_array() {}
 	{ \
 		T *item = __array_at(name)(arr, pos); \
 		\
-		if (!item) \
+        if (NULL == item) \
 			return NULL; \
 		\
 		return *__array_at(name)(arr, pos); \
@@ -284,10 +295,11 @@ static inline void __do_nothing_array() {}
 	\
 	static int __parray_pop_by_ind(name)(struct name *arr, int pos) \
 	{ \
-		int ret = ENODATA; \
+        int ret = ERR_NOT_FOUND; \
 		T addr = __parray_at(name)(arr, pos); \
 		\
-		if (addr) { \
+        if (addr) \
+        { \
 			ret = __array_pop_by_ind(name)(arr, pos); \
 			if (arr->item_destructor_p) \
 				arr->item_destructor_p(addr); \
@@ -298,15 +310,19 @@ static inline void __do_nothing_array() {}
 	\
 	static int __parray_pop(name)(struct name *arr, T addr) \
 	{ \
-		int ret = ENODATA; \
+        int ret = ERR_NOT_FOUND; \
 		\
-		if (!addr || !arr->comparator_p) \
-			return EPERM; \
+        if (NULL == addr) \
+            return ERR_INVALID_ARG; \
+        else if (NULL == arr->comparator_p) \
+            return ERR_NO_COMPARATOR; \
 		\
 		__typeof(arr->data[0]) iter = NULL; \
 		\
-		parray_for_each(arr, iter) { \
-			if (0 == arr->comparator_p(iter, addr)) { \
+        parray_for_each(arr, iter) \
+        { \
+            if (0 == arr->comparator_p(iter, addr)) \
+            { \
 				ret = __parray_pop_by_ind(name)(arr, __aind(iter)); \
 				break; \
 			} \
@@ -319,11 +335,11 @@ static inline void __do_nothing_array() {}
 	{ \
 		T iter = NULL; \
 		\
-		if (!arr->comparator_p || !what) \
+        if (NULL == arr->comparator_p || NULL == what) \
 			return NULL; \
 		\
 		__parray_for_each(arr, iter, pos) { \
-			if (0 == arr->comparator_p(iter, what)) \
+            if (0 == arr->comparator_p(iter, what)) \
 				return iter; \
 		} \
 		\
@@ -333,12 +349,16 @@ static inline void __do_nothing_array() {}
 	static struct name *__parray_new(name)(void) \
 	{ \
 		struct name *arr = (struct name *) calloc(1, sizeof(struct name)); \
-		if (!arr) \
+        \
+        if (NULL == arr) \
 			return NULL; \
+        \
 		arr->len = 0; \
 		arr->capacity = 10; \
 		arr->data = (T *) calloc(arr->capacity, sizeof(T)); \
-		if (!arr->data) { \
+        \
+        if (NULL == arr->data) \
+        { \
 			free(arr); \
 			return NULL; \
 		} \
@@ -347,7 +367,7 @@ static inline void __do_nothing_array() {}
 		arr->pop_p = __parray_pop(name); \
 		arr->pop_by_ind = __parray_pop_by_ind(name); \
 		arr->at_p = __parray_at(name); \
-		arr->comparator_p = __comparator; \
+        arr->comparator_p = __comparator; \
 		arr->find_p = __parray_find(name); \
 		arr->item_destructor_p = __destructor; \
 		arr->item_constructor_p = __constructor; \
@@ -367,9 +387,9 @@ static inline void __do_nothing_array() {}
 		int (*push)(struct name *arr, T *item); \
 		int (*pop_by_ind)(struct name *arr, int pos); \
 		T *(*at)(struct name *arr, int pos); \
-		int (*comparator)(const void *item1, const void *item2); \
-		int (*comparator_p)(T item1, T item2); \
-		void (*item_constructor)(); \
+        int (*comparator)(T *item1, T *item2); \
+        int (*comparator_p)(T item1, T item2); \
+        void (*item_constructor)(); \
 		void (*item_destructor)(T *item); \
 		int (*pop)(struct name *arr, T *addr); \
 		T *(*find)(struct name *arr, T *item, int pos); \
