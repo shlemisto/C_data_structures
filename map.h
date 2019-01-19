@@ -25,17 +25,18 @@
 #define map_key(iter) (iter)->key
 #define map_val(iter) (iter)->val
 
-#define __STATIC_IF(cond, if_true, if_false, ...) _Generic(&(int[(!!(cond)) + 1]) { 0 }, \
-    int(*)[2]: if_true, \
-    int(*)[1]: if_false) \
-  (__VA_ARGS__)
+#define __STATIC_IF(cond, if_true, if_false, ...) \
+	_Generic(&(int[(!!(cond)) + 1]) { 0 }, \
+		int(*)[2]: if_true, \
+		int(*)[1]: if_false) \
+		(__VA_ARGS__)
 
 #define __key_is_string(key) __builtin_types_compatible_p(__typeof(key), char *)
 static inline void __do_nothing_map() {}
 static inline void *__always_null_map() { return NULL; }
 static inline int __push_if_string(char **to, char *key)
 {
-	if (NULL == (*to = strdup(key)))
+if (NULL == (*to = strdup(key)))
 		return ENOMEM;
 	return 0;
 }
@@ -83,7 +84,7 @@ static inline void __free_if_string(char *key) { free(key); }
 		void (*purge)(struct name *map); \
 		int (*push)(struct name *map, T_key key, T_val val); \
 		int (*pop)(struct name *map, T_key key); \
-        T_val (*find)(struct name *map, T_key key); \
+		T_val (*find)(struct name *map, T_key key); \
 		T_val (*find_fmt)(struct name *map, char *fmt, ...); \
 		int (*comparator)(T_key key1, T_key key2); \
 		void (*item_destructor)(T_val val); \
@@ -92,11 +93,11 @@ static inline void __free_if_string(char *key) { free(key); }
 	\
 	static T_val __map_find(name)(struct name *map, T_key key) \
 	{ \
-        list_data(map->list) *iter = NULL; \
-        \
-        if (NULL == map->comparator) \
+		list_data(map->list) *iter = NULL; \
+		\
+		if (NULL == map->comparator) \
 			return NULL; \
-        \
+		\
 		list_for_each(map->list, iter) \
 		{ \
 			if (0 == map->comparator(iter->key, key)) \
@@ -105,7 +106,7 @@ static inline void __free_if_string(char *key) { free(key); }
 		\
 		return NULL; \
 	} \
-    \
+	\
 	static T_val __map_find_fmt(name)(struct name *map, char *fmt, ...) \
 	{ \
 		va_list args; \
@@ -126,20 +127,20 @@ static inline void __free_if_string(char *key) { free(key); }
 	\
 	static int __map_push(name)(struct name *map, T_key key, T_val val) \
 	{ \
-        list_data(map->list) *tmp = NULL; \
+		list_data(map->list) *tmp = NULL; \
 		\
-        if (NULL == val) \
-            return ERR_INVALID_ARG; \
-        else if (__map_find(name)(map, key)) \
-            return ERR_DUPLICATED; \
+		if (NULL == val) \
+			return ERR_INVALID_ARG; \
+		else if (__map_find(name)(map, key)) \
+			return ERR_DUPLICATED; \
 		\
 		if (NULL == (tmp = calloc(1, sizeof(__map_key_val(name))))) \
-            return ERR_NO_MEM; \
+			return ERR_NO_MEM; \
 		\
 		if (__STATIC_IF(__key_is_string(key), __push_if_string, __push_if_not_string_##name, &tmp->key, key)) \
 		{ \
 			free(tmp); \
-            return ERR_NO_MEM; \
+			return ERR_NO_MEM; \
 		} \
 		\
 		tmp->val = val; \
@@ -148,43 +149,43 @@ static inline void __free_if_string(char *key) { free(key); }
 		{ \
 			__STATIC_IF(__key_is_string(key), __free_if_string, __do_nothing_map, key); \
 			free(tmp); \
-            return ERR_NO_MEM; \
+			return ERR_NO_MEM; \
 		} \
 		\
-        return ERR_OK; \
+		return ERR_OK; \
 	} \
 	\
 	static int __map_pop(name)(struct name *map, T_key key) \
 	{ \
 		map_iter(map) *iter; \
 		\
-        if (NULL == map->comparator) \
-            return ERR_NO_COMPARATOR; \
+		if (NULL == map->comparator) \
+			return ERR_NO_COMPARATOR; \
 		\
-        map_for_each_safe(map, node, iter) \
+		map_for_each_safe(map, node, iter) \
 		{ \
 			if (0 == map->comparator(map_key(iter), key))\
-                return map_pop_safe(map, node); \
+				return map_pop_safe(map, node); \
 		} \
 		\
-        return ERR_NOT_FOUND; \
+		return ERR_NOT_FOUND; \
 	} \
-    \
+	\
 	static void __map_purge(name)(struct name *map) \
 	{ \
-        map_iter(map) *iter = NULL; \
+		map_iter(map) *iter = NULL; \
 		\
-        map_for_each_safe(map, node, iter) \
-            map_pop_safe(map, node); \
+		map_for_each_safe(map, node, iter) \
+			map_pop_safe(map, node); \
 		map->list->head = NULL; \
 	} \
 	\
 	static void __map_free(name)(struct name **pmap) \
 	{ \
-        map_purge(*pmap); \
+		map_purge(*pmap); \
 		\
-        list_free((*pmap)->list); \
-        free(*pmap); \
+		list_free((*pmap)->list); \
+		free(*pmap); \
 		*pmap = NULL; \
 	} \
 	\
@@ -194,7 +195,7 @@ static inline void __free_if_string(char *key) { free(key); }
 		\
 		if (NULL == (map = calloc(1, sizeof(struct name)))) \
 			return NULL; \
-        else if (NULL == (map->list = list_new(item_list_##name))) \
+		else if (NULL == (map->list = list_new(item_list_##name))) \
 		{ \
 			free(map); \
 			return NULL; \
@@ -202,7 +203,7 @@ static inline void __free_if_string(char *key) { free(key); }
 		\
 		map->push = __map_push(name); \
 		map->pop = __map_pop(name); \
-        map->find = __map_find(name); \
+		map->find = __map_find(name); \
 		__STATIC_IF(__key_is_string(T_key), __set_find_fmt_##name, __do_nothing_map, map); \
 		map->free = __map_free(name); \
 		map->purge = __map_purge(name); \
