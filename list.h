@@ -79,11 +79,11 @@ static inline void __do_nothing_list() {}
 		T (*item_constructor)(); \
 	} name##_t; \
 	\
-    static T __list_find(name)(struct name *list, T what) \
+	static T __list_find(name)(struct name *list, T what) \
 	{ \
 		T iter = NULL; \
 		\
-        if (NULL == list->head || NULL == list->comparator) \
+		if (NULL == list->head || NULL == list->comparator) \
 			return NULL; \
 		\
 		list_for_each(list, iter) \
@@ -102,9 +102,9 @@ static inline void __do_nothing_list() {}
 		return peek_head ? node_data(list->head) : node_data(list->tail); \
 	} \
 	\
-static int __list_enqueue(name)(struct name *list, T item) \
+	static int __list_enqueue(name)(struct name *list, T item) \
 	{ \
-        list_node(list) *temp = NULL; \
+		list_node(list) *temp = NULL; \
 		\
 		if (NULL == item) \
 			return ERR_INVALID_ARG; \

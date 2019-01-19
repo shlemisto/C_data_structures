@@ -56,10 +56,10 @@ static inline void __free_if_string(char *key) { free(key); }
 #define map_for_each(map, iter) list_for_each(map->list, iter)
 #define map_for_each_safe(map, node, iter) list_for_each_safe(map->list, node, iter)
 #define map_pop_safe(map, node) ({ \
-    __STATIC_IF(__key_is_string(node_data(node)->key), __free_if_string, __do_nothing_map, node_data(node)->key); \
-    map_val_free(map, node_data(node)->val); \
-    list_pop_safe(map->list, node); \
-    0; \
+	__STATIC_IF(__key_is_string(node_data(node)->key), __free_if_string, __do_nothing_map, node_data(node)->key); \
+	map_val_free(map, node_data(node)->val); \
+	list_pop_safe(map->list, node); \
+	0; \
 })
 
 #define map_generator(T_key, T_val, name, __constructor, __destructor, __comparator) \
@@ -68,14 +68,14 @@ static inline void __free_if_string(char *key) { free(key); }
 		T_key key; \
 		T_val val; \
 	}; \
-    \
+	\
 	static int __push_if_not_string_##name(T_key *to, T_key key) \
 	{ \
 		memcpy(to, &key, sizeof(T_key)); \
-        return ERR_OK; \
+		return ERR_OK; \
 	} \
 	\
-    list_generator(__map_key_val(name) *, item_list_##name, NULL, NULL, NULL) \
+	list_generator(__map_key_val(name) *, item_list_##name, NULL, NULL, NULL) \
 	\
 	typedef struct name { \
 		struct item_list_##name *list; \
