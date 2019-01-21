@@ -34,7 +34,7 @@ static inline void __do_nothing_list() {}
 
 // queue
 #define list_enqueue(list, item) (list)->enqueue(list, item)
-#define list_dequeue(list) (list)->pop(list, 1)
+#define list_dequeue(list) (list)->pop(list, 0)
 
 #define list_find(list, what) (list)->find(list, what)
 #define list_len(list) (list)->len
