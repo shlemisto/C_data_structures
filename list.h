@@ -41,7 +41,6 @@ static inline void __do_nothing_list() {}
 #define list_peek_head(list) (list)->peek(list, 1)
 #define list_peek_tail(list) (list)->peek(list, 0)
 #define list_pop_by_val(list, val) (list)->pop_by_val(list, val)
-#define list_pop_tail(list) (list)->pop(list, 0)
 #define list_new(name) __list_new(name)()
 #define list_is_empty(list) ((list)->head == NULL)
 #define list_purge(list) (list)->purge(list)
@@ -195,7 +194,7 @@ static inline void __do_nothing_list() {}
 		else if (node == list->head) \
 			ret = list_pop(list); \
 		else if (node == list->tail) \
-			ret = list_pop_tail(list); \
+			ret = list_dequeue(list); \
 		else \
 		{ \
 			list_node(list) *next = node->next; \
