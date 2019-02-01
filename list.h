@@ -24,7 +24,12 @@
 
 #define list_node(list) __typeof(*(list)->head)
 #define list_data(list) __typeof(*(list)->head->__priv_data)
-#define node_data(node) (node)->__priv_data
+
+#define list_head(list) (list)->head
+#define list_tail(list) (list)->tail
+#define list_node_next(node) (node)->next
+#define list_node_prev(node) (node)->prev
+#define list_node_data(node) (node)->__priv_data
 
 static inline void __do_nothing_list() {}
 
@@ -49,9 +54,11 @@ static inline void __do_nothing_list() {}
 #define list_val_free(list, item) (list)->item_destructor ? (list)->item_destructor(item) : free(item)
 #define list_for_each(list, user_data) \
 	for (list_node(list) *node = (list)->head; node && (user_data = node->__priv_data, 1); node = node->next)
+#define list_for_each_inverse(list, user_data) \
+	for (list_node(list) *node = (list)->tail; node && (user_data = node->__priv_data, 1); node = node->prev)
 
 #define list_for_each_safe(list, node, user_data) \
-	for (list_node(list) *node = (list)->head, *safe_node = NULL; node && (user_data = node_data(node), 1) && (safe_node = node->next, 1); node = safe_node)
+	for (list_node(list) *node = (list)->head, *safe_node = NULL; node && (user_data = list_node_data(node), 1) && (safe_node = node->next, 1); node = safe_node)
 #define list_pop_safe(list, node) (list)->pop_safe(list, node)
 
 #define list_generator(T, name, __constructor, __destructor, __comparator) \
@@ -98,7 +105,7 @@ static inline void __do_nothing_list() {}
 	{ \
 		if (NULL == list->head) \
 			return NULL; \
-		return peek_head ? node_data(list->head) : node_data(list->tail); \
+		return peek_head ? list_node_data(list->head) : list_node_data(list->tail); \
 	} \
 	\
 	static int __list_enqueue(name)(struct name *list, T item) \
@@ -111,7 +118,7 @@ static inline void __do_nothing_list() {}
 		if (NULL == (temp = calloc(1, sizeof(list_node(list))))) \
 			return ERR_NO_MEM; \
 		\
-		node_data(temp) = item; \
+		list_node_data(temp) = item; \
 		\
 		if (NULL == list->head) \
 			list->head = list->tail = temp; \
@@ -137,7 +144,7 @@ static inline void __do_nothing_list() {}
 		if (NULL == (temp = calloc(1, sizeof(list_node(list))))) \
 			return ERR_NO_MEM; \
 		\
-		node_data(temp) = item; \
+		list_node_data(temp) = item; \
 		\
 		if (NULL == list->head) \
 			list->head = list->tail = temp; \
@@ -177,7 +184,7 @@ static inline void __do_nothing_list() {}
 			list->tail->next = NULL; \
 		} \
 		\
-		list_val_free(list, node_data(node)); \
+		list_val_free(list, list_node_data(node)); \
 		free(node); \
 		\
 		list->len -= 1; \
