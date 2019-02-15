@@ -62,7 +62,6 @@ static inline void __do_nothing_array() {}
 		} \
 		\
 		arr->len = 0; \
-		arr->capacity = 10; \
 	} \
 	\
 	static void __array_free(name)(struct name **parr) \
