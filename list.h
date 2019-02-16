@@ -35,16 +35,18 @@ static inline void __do_nothing_list() {}
 
 // stack
 #define list_push(list, item) (list)->push(list, item)
-#define list_pop(list) (list)->pop(list, 1)
+#define list_pop(list) (list)->pop(list, 1, 0)
 
 // queue
 #define list_enqueue(list, item) (list)->enqueue(list, item)
-#define list_dequeue(list) (list)->pop(list, 0)
+#define list_dequeue(list) (list)->pop(list, 0, 0)
 
 #define list_find(list, what) (list)->find(list, what)
 #define list_len(list) (list)->len
-#define list_peek_head(list) (list)->peek(list, 1)
-#define list_peek_tail(list) (list)->peek(list, 0)
+#define list_peek_head(list) (list)->peek(list, 1, 0)
+#define list_peek_tail(list) (list)->peek(list, 0, 0)
+#define list_steal_head(list) (list)->peek(list, 1, 1)
+#define list_steal_tail(list) (list)->peek(list, 0, 1)
 #define list_pop_by_val(list, val) (list)->pop_by_val(list, val)
 #define list_new(name) __list_new(name)()
 #define list_is_empty(list) ((list)->head == NULL)
@@ -76,10 +78,10 @@ static inline void __do_nothing_list() {}
 		int (*pop_safe)(struct name *list, struct list_node_##name *node); \
 		int (*pop_by_val)(struct name *list, T val); \
 		int (*push)(struct name *list, T item); \
-		int (*pop)(struct name *list, int pop_head); \
+		int (*pop)(struct name *list, int pop_head, int steal); \
 		int (*enqueue)(struct name *list, T item); \
 		T (*find)(struct name *list, T data); \
-		T (*peek)(struct name *list, int peek_head); \
+		T (*peek)(struct name *list, int peek_head, int steal); \
 		int (*comparator)(T item1, T item2); \
 		void (*item_destructor)(T item); \
 		T (*item_constructor)(); \
@@ -101,11 +103,19 @@ static inline void __do_nothing_list() {}
 		return NULL; \
 	} \
 	\
-	static T __list_peek(name)(struct name *list, int peek_head) \
+	static T __list_peek(name)(struct name *list, int peek_head, int steal) \
 	{ \
+		T data = NULL; \
+		\
 		if (NULL == list->head) \
 			return NULL; \
-		return peek_head ? list_node_data(list->head) : list_node_data(list->tail); \
+		\
+		data = peek_head ? list_node_data(list->head) : list_node_data(list->tail); \
+		\
+		if (steal) \
+			list->pop(list, peek_head, steal); \
+		\
+		return data; \
 	} \
 	\
 	static int __list_enqueue(name)(struct name *list, T item) \
@@ -160,7 +170,7 @@ static inline void __do_nothing_list() {}
 		return ERR_OK; \
 	} \
 	\
-	static int __list_pop(name)(struct name *list, int pop_head) \
+	static int __list_pop(name)(struct name *list, int pop_head, int steal) \
 	{ \
 		list_node(list) *node = NULL; \
 		\
@@ -184,7 +194,8 @@ static inline void __do_nothing_list() {}
 			list->tail->next = NULL; \
 		} \
 		\
-		list_val_free(list, list_node_data(node)); \
+		if (0 == steal) \
+			list_val_free(list, list_node_data(node)); \
 		free(node); \
 		\
 		list->len -= 1; \
