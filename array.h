@@ -233,7 +233,7 @@ static inline void __do_nothing_array() {}
 #define parray_len(arr) array_len(arr)
 #define parray_data(arr) array_data(arr)
 #define parray_is_empty(arr) array_is_empty(arr)
-#define parray_val_free(arr, item) (arr)->item_destructor_p ? (arr)->item_destructor_p(item) : __do_nothing_array()
+#define parray_val_free(arr, item) (arr)->item_destructor_p ? (arr)->item_destructor_p(item) : free(item)
 #define parray_val_new(arr, ...) (arr)->item_constructor_p ? (arr)->item_constructor_p(__VA_ARGS__) : NULL
 #define parray_push(arr, item) (arr)->push_p(arr, item)
 #define parray_pop_by_ind(arr, pos) (arr)->pop_by_ind(arr, pos)
@@ -254,11 +254,8 @@ static inline void __do_nothing_array() {}
 	\
 	static void __parray_purge(name)(struct name *arr) \
 	{ \
-		if (arr->item_destructor_p) \
-		{ \
-			for (int i = 0 ; i < array_len(arr); ++i) \
-				arr->item_destructor_p(parray_at(arr, i)); \
-		} \
+		for (int i = 0; i < array_len(arr); ++i) \
+			parray_val_free(arr, parray_at(arr, i)); \
 		arr->len = 0; \
 		arr->capacity = 10; \
 	} \
