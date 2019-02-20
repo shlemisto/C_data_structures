@@ -42,7 +42,12 @@ static inline void __do_nothing_list() {}
 #define list_dequeue(list) (list)->pop(list, 0, 0)
 
 #define list_find(list, what) (list)->find(list, what)
-#define list_len(list) (list)->len
+#define list_len(list) ({ \
+	size_t len = 0; \
+	for (list_node(list) *node = (list)->head, *safe_node = NULL; node && (safe_node = node->next, 1); node = safe_node) \
+		++len; \
+	len; \
+})
 #define list_peek_head(list) (list)->peek(list, 1, 0)
 #define list_peek_tail(list) (list)->peek(list, 0, 0)
 #define list_steal_head(list) (list)->peek(list, 1, 1)
@@ -70,7 +75,6 @@ static inline void __do_nothing_list() {}
 	}; \
 	\
 	typedef struct name { \
-		size_t len; \
 		struct list_node_##name *head, *tail; \
 		\
 		void (*purge)(struct name *list); \
@@ -139,8 +143,6 @@ static inline void __do_nothing_list() {}
 			list->tail = temp; \
 		} \
 		\
-		list->len += 1; \
-		\
 		return ERR_OK; \
 	} \
 	\
@@ -164,8 +166,6 @@ static inline void __do_nothing_list() {}
 			list->head->prev = temp; \
 			list->head = temp; \
 		} \
-		\
-		list->len += 1; \
 		\
 		return ERR_OK; \
 	} \
@@ -198,8 +198,6 @@ static inline void __do_nothing_list() {}
 			list_val_free(list, list_node_data(node)); \
 		free(node); \
 		\
-		list->len -= 1; \
-		\
 		return ERR_OK; \
 	} \
 	\
@@ -223,8 +221,6 @@ static inline void __do_nothing_list() {}
 			\
 			list_val_free(list, node->__priv_data); \
 			free(node); \
-			\
-			list->len -= 1; \
 		} \
 		\
 		return ret; \
@@ -242,7 +238,7 @@ static inline void __do_nothing_list() {}
 		list_for_each_safe(list, node, iter) \
 		{ \
 			if (0 == list->comparator(iter, what)) \
-			return list_pop_safe(list, node); \
+				return list_pop_safe(list, node); \
 		} \
 		\
 		return ERR_NOT_FOUND; \
@@ -250,8 +246,8 @@ static inline void __do_nothing_list() {}
 	\
 	static void __list_purge(name)(struct name *list) \
 	{ \
-		while (list_len(list)) \
-			list_pop(list); \
+		for (list_node(list) *node = list->head, *safe_node = NULL; node && (safe_node = node->next, 1); node = safe_node) \
+			(void) list_pop_safe(list, node); \
 		\
 		list->head = NULL; \
 	} \

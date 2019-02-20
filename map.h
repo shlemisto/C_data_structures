@@ -174,10 +174,8 @@ static inline void __free_if_string(char *key) { free(key); }
 	\
 	static void __map_purge(name)(struct name *map) \
 	{ \
-		map_iter(map) *iter = NULL; \
-		\
-		map_for_each_safe(map, node, iter) \
-			map_pop_safe(map, node); \
+		for (list_node(map->list) *node = map->list->head, *safe_node = NULL; node && (safe_node = node->next, 1); node = safe_node) \
+			(void) map_pop_safe(map, node); \
 		map->list->head = NULL; \
 	} \
 	\
