@@ -4,5 +4,5 @@ See code example in example.c
 
 To compile:
 ```
-gcc -Wall -pedantic -std=c11 -o example exmample.c # gcc >= 4.9
+gcc -Wall -pedantic -std=c11 -o example example.c # gcc >= 4.9
 ```
