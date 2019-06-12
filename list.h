@@ -22,8 +22,8 @@
 #define __list_free(name)        __list_## name ##_free
 #define __list_purge(name)       __list_## name ##_purge
 
-#define list_node(list) __typeof(*(list)->head)
-#define list_data(list) __typeof(*(list)->head->__priv_data)
+#define list_node_t(list) __typeof(*(list)->head)
+#define list_data_t(list) __typeof(*(list)->head->__priv_data)
 
 #define list_head(list) (list)->head
 #define list_tail(list) (list)->tail
@@ -44,7 +44,7 @@ static inline void __do_nothing_list() {}
 #define list_find(list, what) (list)->find(list, what)
 #define list_len(list) ({ \
 	size_t len = 0; \
-	for (list_node(list) *node = (list)->head, *safe_node = NULL; node && (safe_node = node->next, 1); node = safe_node) \
+	for (list_node_t(list) *node = list_head(list), *safe_node = NULL; node && (safe_node = list_node_next(node), 1); node = safe_node) \
 		++len; \
 	len; \
 })
@@ -54,18 +54,18 @@ static inline void __do_nothing_list() {}
 #define list_steal_tail(list) (list)->peek(list, 0, 1)
 #define list_pop_by_val(list, val) (list)->pop_by_val(list, val)
 #define list_new(name) __list_new(name)()
-#define list_is_empty(list) ((list)->head == NULL)
+#define list_is_empty(list) (list_head(list) == NULL)
 #define list_purge(list) (list)->purge(list)
 #define list_free(list) ({ if (list) (list)->free(&(list)); })
 #define list_val_new(list, ...) (list)->item_constructor ? (list)->item_constructor(__VA_ARGS__) : NULL
 #define list_val_free(list, item) (list)->item_destructor ? (list)->item_destructor(item) : free(item)
 #define list_for_each(list, user_data) \
-	for (list_node(list) *node = (list)->head; node && (user_data = node->__priv_data, 1); node = node->next)
+	for (list_node_t(list) *node = list_head(list); node && (user_data = list_node_data(node), 1); node = list_node_next(node))
 #define list_for_each_inverse(list, user_data) \
-	for (list_node(list) *node = (list)->tail; node && (user_data = node->__priv_data, 1); node = node->prev)
+	for (list_node_t(list) *node = list_tail(list); node && (user_data = list_node_data(node), 1); node = list_node_prev(node))
 
 #define list_for_each_safe(list, node, user_data) \
-	for (list_node(list) *node = (list)->head, *safe_node = NULL; node && (user_data = list_node_data(node), 1) && (safe_node = node->next, 1); node = safe_node)
+	for (list_node_t(list) *node = list_head(list), *safe_node = NULL; node && (user_data = list_node_data(node), 1) && (safe_node = list_node_next(node), 1); node = safe_node)
 #define list_pop_safe(list, node) (list)->pop_safe(list, node)
 
 #define list_generator(T, name, __constructor, __destructor, __comparator) \
@@ -95,7 +95,7 @@ static inline void __do_nothing_list() {}
 	{ \
 		T iter = NULL; \
 		\
-		if (NULL == list->head || NULL == list->comparator) \
+		if (list_is_empty(list) || NULL == list->comparator) \
 			return NULL; \
 		\
 		list_for_each(list, iter) \
@@ -111,7 +111,7 @@ static inline void __do_nothing_list() {}
 	{ \
 		T data = NULL; \
 		\
-		if (NULL == list->head) \
+		if (list_is_empty(list)) \
 			return NULL; \
 		\
 		data = peek_head ? list_node_data(list->head) : list_node_data(list->tail); \
@@ -124,17 +124,17 @@ static inline void __do_nothing_list() {}
 	\
 	static int __list_enqueue(name)(struct name *list, T item) \
 	{ \
-		list_node(list) *temp = NULL; \
+		list_node_t(list) *temp = NULL; \
 		\
 		if (NULL == item) \
 			return ERR_INVALID_ARG; \
 		\
-		if (NULL == (temp = calloc(1, sizeof(list_node(list))))) \
+		if (NULL == (temp = calloc(1, sizeof(list_node_t(list))))) \
 			return ERR_NO_MEM; \
 		\
 		list_node_data(temp) = item; \
 		\
-		if (NULL == list->head) \
+		if (list_is_empty(list)) \
 			list->head = list->tail = temp; \
 		else \
 		{ \
@@ -148,23 +148,23 @@ static inline void __do_nothing_list() {}
 	\
 	static int __list_push(name)(struct name *list, T item) \
 	{ \
-		list_node(list) *temp = NULL; \
+		list_node_t(list) *temp = NULL; \
 		\
 		if (NULL == item) \
 			return ERR_INVALID_ARG; \
 		\
-		if (NULL == (temp = calloc(1, sizeof(list_node(list))))) \
+		if (NULL == (temp = calloc(1, sizeof(list_node_t(list))))) \
 			return ERR_NO_MEM; \
 		\
 		list_node_data(temp) = item; \
 		\
-		if (NULL == list->head) \
-			list->head = list->tail = temp; \
+		if (list_is_empty(list)) \
+			list_head(list) = list_tail(list) = temp; \
 		else \
 		{ \
-			temp->next = list->head; \
-			list->head->prev = temp; \
-			list->head = temp; \
+			list_node_next(temp) = list_head(list); \
+			list_node_prev(list_head(list)) = temp; \
+			list_head(list) = temp; \
 		} \
 		\
 		return ERR_OK; \
@@ -172,26 +172,26 @@ static inline void __do_nothing_list() {}
 	\
 	static int __list_pop(name)(struct name *list, int pop_head, int steal) \
 	{ \
-		list_node(list) *node = NULL; \
+		list_node_t(list) *node = NULL; \
 		\
-		if (NULL == list->head) \
+		if (list_is_empty(list)) \
 			return ERR_EMPTY; \
 		\
-		node = pop_head ? list->head : list->tail; \
+		node = pop_head ? list_head(list) : list_tail(list); \
 		\
-		if (list->tail == list->head) \
-			list->head = list->tail = NULL; \
+		if (list_head(list) == list_tail(list)) \
+			list_head(list) = list_tail(list) = NULL; \
 		else if (pop_head) \
 		{ \
-			list->head = list->head->next; \
-			if (list->head) \
-			list->head->prev = NULL; \
+			list_head(list) = list_node_next(list_head(list)); \
+			if (list_head(list)) \
+				list_node_prev(list_head(list)) = NULL; \
 		} \
 		else \
 		{ \
-			list->tail = list->tail->prev; \
-			if (list->tail) \
-			list->tail->next = NULL; \
+			list_tail(list) = list_node_prev(list_tail(list)); \
+			if (list_tail(list)) \
+				list_node_next(list_tail(list)) = NULL; \
 		} \
 		\
 		if (0 == steal) \
@@ -201,25 +201,25 @@ static inline void __do_nothing_list() {}
 		return ERR_OK; \
 	} \
 	\
-	static int __list_pop_safe(name)(struct name *list, list_node(list) *node) \
+	static int __list_pop_safe(name)(struct name *list, list_node_t(list) *node) \
 	{ \
 		int ret = 0; \
 		\
-		if (NULL == list->head) \
+		if (list_is_empty(list)) \
 			ret = ERR_EMPTY; \
-		else if (node == list->head) \
+		else if (node == list_head(list)) \
 			ret = list_pop(list); \
-		else if (node == list->tail) \
+		else if (node == list_tail(list)) \
 			ret = list_dequeue(list); \
 		else \
 		{ \
-			list_node(list) *next = node->next; \
-			list_node(list) *prev = node->prev; \
+			list_node_t(list) *next = list_node_next(node); \
+			list_node_t(list) *prev = list_node_prev(node); \
 			\
-			next->prev = prev; \
-			prev->next = next; \
+			list_node_prev(next) = prev; \
+			list_node_next(prev) = next; \
 			\
-			list_val_free(list, node->__priv_data); \
+			list_val_free(list, list_node_data(node)); \
 			free(node); \
 		} \
 		\
@@ -230,7 +230,7 @@ static inline void __do_nothing_list() {}
 	{ \
 		T iter = NULL; \
 		\
-		if (NULL == list->head) \
+		if (list_is_empty(list)) \
 			return ERR_EMPTY; \
 		if (NULL == list->comparator) \
 			return ERR_NO_COMPARATOR; \
@@ -246,10 +246,10 @@ static inline void __do_nothing_list() {}
 	\
 	static void __list_purge(name)(struct name *list) \
 	{ \
-		for (list_node(list) *node = list->head, *safe_node = NULL; node && (safe_node = node->next, 1); node = safe_node) \
+		for (list_node_t(list) *node = list_head(list), *safe_node = NULL; node && (safe_node = list_node_next(node), 1); node = safe_node) \
 			(void) list_pop_safe(list, node); \
 		\
-		list->head = NULL; \
+		list_head(list) = NULL; \
 	} \
 	\
 	static void __list_free(name)(struct name **plist) \
