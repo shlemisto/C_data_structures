@@ -114,7 +114,7 @@ static inline void __do_nothing_list() {}
 		if (list_is_empty(list)) \
 			return NULL; \
 		\
-		data = peek_head ? list_node_data(list->head) : list_node_data(list->tail); \
+		data = peek_head ? list_node_data(list_head(list)) : list_node_data(list_tail(list)); \
 		\
 		if (steal) \
 			list->pop(list, peek_head, steal); \
@@ -135,12 +135,12 @@ static inline void __do_nothing_list() {}
 		list_node_data(temp) = item; \
 		\
 		if (list_is_empty(list)) \
-			list->head = list->tail = temp; \
+			list_head(list) = list_tail(list) = temp; \
 		else \
 		{ \
-			list->tail->next = temp; \
-			temp->prev = list->tail; \
-			list->tail = temp; \
+			list_node_next(list_tail(list)) = temp; \
+			list_node_prev(temp) = list_tail(list); \
+			list_tail(list) = temp; \
 		} \
 		\
 		return ERR_OK; \
