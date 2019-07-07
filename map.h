@@ -44,6 +44,7 @@ static inline void __free_if_string(char *key) { free(key); }
 
 #define map_new(name) __map_new(name)()
 #define map_push(map, key, val) (map)->push(map, key, val)
+#define map_push_new(map, key, ...) (map)->push(map, key, map_val_new(map, __VA_ARGS__))
 #define map_pop(map, key) (map)->pop(map, key)
 #define map_find(map, what) (map)->find(map, what)
 #define map_find_fmt(map, ...) (map)->find_fmt(map, __VA_ARGS__)
@@ -86,7 +87,7 @@ static inline void __free_if_string(char *key) { free(key); }
 		int (*pop)(struct name *map, T_key key); \
 		T_val (*find)(struct name *map, T_key key); \
 		T_val (*find_fmt)(struct name *map, char *fmt, ...); \
-		int (*comparator)(T_key key1, T_key key2); \
+		int (*comparator)(const T_key key1, const T_key key2); \
 		void (*item_destructor)(T_val val); \
 		T_val (*item_constructor)(); \
 	} name##_t; \

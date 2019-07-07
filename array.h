@@ -38,6 +38,7 @@ static inline void __do_nothing_array() {}
 #define array_pop(arr, pos) (arr)->pop(arr, pos)
 #define array_pop_by_ind(arr, pos) (arr)->pop_by_ind(arr, pos)
 #define array_push(arr, item) (arr)->push(arr, item)
+#define array_push_new(arr, ...) (arr)->push(arr, array_val_new(arr, __VA_ARGS__))
 #define array_push_array(arr, from, len) (arr)->push_array(arr, from, len)
 #define array_find_from(arr, what, pos) (arr)->find(arr, what, pos)
 #define array_find(arr, what) array_find_from(arr, what, 0)
@@ -236,6 +237,7 @@ static inline void __do_nothing_array() {}
 #define parray_val_free(arr, item) (arr)->item_destructor_p ? (arr)->item_destructor_p(item) : free(item)
 #define parray_val_new(arr, ...) (arr)->item_constructor_p ? (arr)->item_constructor_p(__VA_ARGS__) : NULL
 #define parray_push(arr, item) (arr)->push_p(arr, item)
+#define parray_push_new(arr, ...) (arr)->push_p(arr, parray_val_new(arr, __VA_ARGS__))
 #define parray_pop_by_ind(arr, pos) (arr)->pop_by_ind(arr, pos)
 #define parray_pop(arr, addr) (arr)->pop_p(arr, addr)
 #define parray_at(arr, i) (arr)->at_p(arr, i)
@@ -383,8 +385,8 @@ static inline void __do_nothing_array() {}
 		int (*push)(struct name *arr, T *item); \
 		int (*pop_by_ind)(struct name *arr, int pos); \
 		T *(*at)(struct name *arr, int pos); \
-		int (*comparator)(T *item1, T *item2); \
-		int (*comparator_p)(T item1, T item2); \
+		int (*comparator)(const T *item1, const T *item2); \
+		int (*comparator_p)(const T item1, const T item2); \
 		void (*item_constructor)(); \
 		void (*item_destructor)(T *item); \
 		int (*pop)(struct name *arr, T *addr); \

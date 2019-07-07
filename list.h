@@ -35,10 +35,12 @@ static inline void __do_nothing_list() {}
 
 // stack
 #define list_push(list, item) (list)->push(list, item)
+#define list_push_new(list, ...) (list)->push(list, list_val_new(list, __VA_ARGS__))
 #define list_pop(list) (list)->pop(list, 1, 0)
 
 // queue
 #define list_enqueue(list, item) (list)->enqueue(list, item)
+#define list_enqueue_new(list, ...) (list)->enqueue(list, list_val_new(list, __VA_ARGS__))
 #define list_dequeue(list) (list)->pop(list, 0, 0)
 
 #define list_find(list, what) (list)->find(list, what)
@@ -86,7 +88,7 @@ static inline void __do_nothing_list() {}
 		int (*enqueue)(struct name *list, T item); \
 		T (*find)(struct name *list, T data); \
 		T (*peek)(struct name *list, int peek_head, int steal); \
-		int (*comparator)(T item1, T item2); \
+		int (*comparator)(const T item1, const T item2); \
 		void (*item_destructor)(T item); \
 		T (*item_constructor)(); \
 	} name##_t; \
