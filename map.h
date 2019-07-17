@@ -47,6 +47,24 @@ static inline void __free_if_string(char *key) { free(key); }
 #define map_push_new(map, key, ...) (map)->push(map, key, map_val_new(map, __VA_ARGS__))
 #define map_pop(map, key) (map)->pop(map, key)
 #define map_find(map, what) (map)->find(map, what)
+#define map_find_by(map, what, field, comparator) ({ \
+	int found = 0; \
+	list_data_t(map->list) *iter = NULL; \
+	\
+	if (comparator) \
+	{ \
+		list_for_each(map->list, iter) \
+		{ \
+			if (0 == comparator(map_val(iter)->field, what)) \
+			{ \
+				found = 1; \
+				break; \
+			} \
+		} \
+	} \
+	\
+	found ? map_val(iter) : NULL; \
+})
 #define map_find_fmt(map, ...) (map)->find_fmt(map, __VA_ARGS__)
 #define map_is_empty(map) (list_is_empty((map)->list))
 #define map_len(map) list_len((map)->list)
